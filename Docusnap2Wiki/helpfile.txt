@@ -1,0 +1,10 @@
+﻿docusnap2wikihelp.chm
+
+Titelseite:
+
+Die Titelseite wird mit Informationen aus dem Kontext formatiert. Dazu gibt der Benutzer Format-Markierer nach dem folgenden Muster ein:
+
+{{{spaltenname}}}	=> fügt für jede erstellte Seite den Wert der entsprechenden Spalte aus der Input-Datei ein.
+{index}				=> fügt für jede erstellte Seite den Zeilenindex der Input-Datei ein, d.h. erste Input-Zeile gleich 1, zweite Input-Zeile gleich 2 etc.
+
+Alle anderen Eingaben in das Textfeld werden 1:1 übernommen.
