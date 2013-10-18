@@ -1,10 +1,40 @@
 ﻿docusnap2wikihelp.chm
 
-Titelseite:
+Einzelne Steuerelemente
+=======================
 
-Die Titelseite wird mit Informationen aus dem Kontext formatiert. Dazu gibt der Benutzer Format-Markierer nach dem folgenden Muster ein:
+## Input-Datei ##
+Hier kann der Benutzer eine CSV Datei auswählen, aus der der Kontext zur Formatierung des Seitentitels und -texts erstellt wird.
 
-{{{spaltenname}}}	=> fügt für jede erstellte Seite den Wert der entsprechenden Spalte aus der Input-Datei ein.
-{index}				=> fügt für jede erstellte Seite den Zeilenindex der Input-Datei ein, d.h. erste Input-Zeile gleich 1, zweite Input-Zeile gleich 2 etc.
+## Filter ##
+
+Der Benutzer kann in diesem Steuerelement einzelne Spalten der Input-Datei abwählen, so dass diese nicht in die Erstellung des Kontext einfließen.
+
+## Vorlage ##
+
+In diesem Feld kann der Benutzer eine Vorlage aus dem Wiki angeben. Bei Betätigen von [Enter] bzw. [Return] wird probiert diese aus dem Wiki in das Steuerelement 'Seitentext' zu laden. Die Eingabe erfolgt nach dem Muster 'Vorlage:Vorlagenname', d.h. mit Angabe des Namensraums vor dem Doppelpunkt.
+
+## Titelseite ##
+
+Die Titelseite wird mit Informationen aus dem Kontext formatiert. Näheres unter dem Punkt 'Formatierung'.
+
+## Seitentext ##
+
+Der Seitentext ist der MediaWiki Markup Text, der im Körper der anzulegenden Wiki-Seite eingefügt wird. Auch dieser Text wird mit den Informationen aus dem Kontext formatiert. Näheres unter dem Punkt 'Formatierung'.
+
+## Kommentar ##
+
+Der Kommentar Text wird unformatiert übernommen.
+
+Formatierung
+============
+
+Die Eingaben einiger Textfelder werden formatiert mit Informationen aus dem Kontext, der aus der CSV Input Datei erzeugt wird.
+
+Um die Daten aus dem Kontext in die Textfelder zu bekommen, gibt der Benutzer Format-Markierer nach dem folgenden Muster ein:
+
+	{{{spaltenname}}}	=> fügt für jede erstellte Seite den Wert der entsprechenden Spalte aus der Input-Datei ein.
+	{index}				=> fügt für jede erstellte Seite den Zeilenindex der Input-Datei ein, d.h. erste Input-Zeile gleich 1, zweite Input-Zeile gleich 2 etc.
+	{row_count}			=> fügt die Gesamtanzahl an Daten-Zeilen der Input-Datei ein.
 
 Alle anderen Eingaben in das Textfeld werden 1:1 übernommen.

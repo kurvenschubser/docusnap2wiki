@@ -1,4 +1,0 @@
-﻿namespace Docusnap2Wiki
-{
-	
-}

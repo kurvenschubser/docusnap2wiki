@@ -10,6 +10,9 @@ namespace Docusnap2Wiki
 	using System.Linq;
 	using System.Text;
 	using System.Windows.Forms;
+	using System.Net;
+	using System.Xml;
+	using System.Text.RegularExpressions;
 
 	using DotNetWikiBot;
 
@@ -17,7 +20,7 @@ namespace Docusnap2Wiki
 	public partial class MainForm : Form
 	{
 		List<string[]> rows;
-
+		string[] categories;
 
 		public MainForm()
 		{
@@ -25,7 +28,80 @@ namespace Docusnap2Wiki
 
 			this.textBox_pagetitle.TextChanged += new EventHandler(OnPageTitleTextChanged);
 			this.textBox_template.KeyUp += new KeyEventHandler(OnTextboxTemplateKeyUp);
+			this.textBox_template.LostFocus += new EventHandler(OnTextboxTemplateLostFocus);
 
+			this.treeView_categories.AfterCheck += new TreeViewEventHandler(OnTreeViewCategoriesAfterCheck);
+
+			//this.richTextBox_pagetext.ModifiedChanged += new EventHandler(OnRichTextBoxPagetextModifiedChanged);
+
+			this.richTextBox_pagetext.TextChanged += new EventHandler(OnRichTextBoxPagetextTextChanged);
+		}
+
+		void OnRichTextBoxPagetextTextChanged(object sender, EventArgs e)
+		{
+			this.HandlePageTextModified();
+		}
+
+		void OnRichTextBoxPagetextModifiedChanged(object sender, EventArgs e)
+		{
+			this.HandlePageTextModified();
+		}
+
+		void HandlePageTextModified()
+		{
+			string txt = this.richTextBox_pagetext.Text;
+
+			Regex re = new Regex(@"\[\[Kategorie:(.*?)\]\]");
+			MatchCollection matches = re.Matches(txt);
+
+			List<string> cats = new List<string>();
+
+			foreach (Match m in matches)
+			{
+				cats.Add(m.Groups[1].Value);
+			}
+
+			HashSet<string> cats_union = new HashSet<string>(this.CurrentlySelectedCategories.Union(cats));
+			if (cats_union.Count == this.CurrentlySelectedCategories.Count())
+			{
+				return;
+			}
+
+			this.Categories = this.Categories.Union(cats).ToArray();
+			this.CurrentlySelectedCategories = cats_union;
+
+			this.SetupCategories(this.Categories, this.CurrentlySelectedCategories);
+		}
+
+		void OnTreeViewCategoriesAfterCheck(object sender, TreeViewEventArgs e)
+		{
+			if (e.Node.Checked)
+			{
+				AddCategoryToPage(e.Node.Text);
+			}
+			else
+			{
+				StripCategoryFromPage(e.Node.Text);
+			}
+		}
+
+		private void AddCategoryToPage(string cat)
+		{
+			string txt = this.richTextBox_pagetext.Text;
+
+			if (!txt.Contains(cat))
+			{
+				txt = "[[Kategorie:" + cat + "]]\n" + txt;
+			}
+
+			this.richTextBox_pagetext.Text = txt;
+		}
+
+		private void StripCategoryFromPage(string cat)
+		{
+			this.richTextBox_pagetext.Text = this.richTextBox_pagetext.Text
+												.Replace("[[Kategorie:" + cat + "]]", "")
+												.TrimStart();
 		}
 
 		private List<string[]> Rows
@@ -49,26 +125,37 @@ namespace Docusnap2Wiki
 			if (e.KeyCode == Keys.Enter || e.KeyCode == Keys.Return)
 			{
 				Cursor.Current = Cursors.WaitCursor;
-
-				Page p = new Page(this.Site, this.textBox_template.Text);
-				p.Load();
-				if (!p.IsEmpty())
-				{
-					this.FillFormFromPage(p);
-				}
-				else
-				{
-					MessageBox.Show("Diese Seite ist nicht-existent.", "Vorlage nicht gefunden");
-				}
-
+				LoadTemplatePage(this.textBox_template.Text);
 				Cursor.Current = Cursors.Default;
 			}
+		}
 
+		void OnTextboxTemplateLostFocus(object sender, EventArgs e)
+		{
+			Cursor.Current = Cursors.WaitCursor;
+			LoadTemplatePage(this.textBox_template.Text);
+			Cursor.Current = Cursors.Default;
+		}
+
+		void LoadTemplatePage(string pagetitle)
+		{
+			Page p = new Page(this.Site, pagetitle);
+			p.Load();
+			if (!p.IsEmpty())
+			{
+				this.FillFormFromPage(p);
+			}
+			else
+			{
+				MessageBox.Show("Diese Seite ist nicht-existent.", "Vorlage nicht gefunden");
+			}
 		}
 
 		private void OnPageTitleTextChanged(object sender, EventArgs e)
 		{
 			this.timer_template.Start();
+
+			
 		}
 
 		private void OnBrowseInputFileClick(object sender, EventArgs e)
@@ -132,7 +219,7 @@ namespace Docusnap2Wiki
 				}
 				catch (Microsoft.VisualBasic.FileIO.MalformedLineException ex)
 				{
-					MessageBox.Show(string.Format("Line {0}: '{1}' is invalid. Skipping", i, ex.Message ));
+					MessageBox.Show(string.Format("Zeile {0}: '{1}' ist ungültig und wird übersprungen.", i, ex.Message ));
 				}
 				i++;
 			}
@@ -144,6 +231,8 @@ namespace Docusnap2Wiki
 
 		private void OnUploadClick(object sender, EventArgs e)
 		{
+			Cursor.Current = Cursors.WaitCursor;
+
 			System.Text.RegularExpressions.Regex re = new System.Text.RegularExpressions.Regex(@"\[\[Kategorie:.*\]\]");
 			System.Text.RegularExpressions.Match m = re.Match(this.richTextBox_pagetext.Text);
 			if (!m.Success)
@@ -162,8 +251,8 @@ namespace Docusnap2Wiki
 					"Keine Kontext-Informationen", MessageBoxButtons.YesNo);
 				if (answer == System.Windows.Forms.DialogResult.Yes)
 				{
-					string pagetext = this.FormatWithContext(this.richTextBox_pagetext.Text, new Dictionary<string, string>(), 1, 1);
-					string pagetitle = this.FormatWithContext(this.textBox_pagetitle.Text, new Dictionary<string, string>(), 1, 1);
+					string pagetext = this.FormatWithContext(this.richTextBox_pagetext.Text, new Dictionary<string, object>(), 1, 1);
+					string pagetitle = this.FormatWithContext(this.textBox_pagetitle.Text, new Dictionary<string, object>(), 1, 1);
 					if (string.IsNullOrEmpty(pagetitle))
 					{
 						MessageBox.Show("Es muss ein Seitentitel angegeben werden.", "Leerer Seitentitel");
@@ -193,7 +282,7 @@ namespace Docusnap2Wiki
 			int current_row_no = 1;
 			foreach (string[] row in this.Rows)
 			{
-				Dictionary<string, string> context = this.MakeContext(row);
+				Dictionary<string, object> context = this.MakeContext(row);
 				string pagetext = this.FormatWithContext(this.richTextBox_pagetext.Text, context, current_row_no, this.Rows.Count);
 				string pagetitle = this.FormatWithContext(this.textBox_pagetitle.Text, context, current_row_no, this.Rows.Count);
 				bool do_generate = true;
@@ -234,22 +323,68 @@ namespace Docusnap2Wiki
 				current_row_no++;
 			}
 
+			Cursor.Current = Cursors.Default;
+
 			MessageBox.Show(string.Join("\n", generated_contents.Select(o => o.Item1 ? "Angelegt: " : "Nicht angelegt: " + string.Join(" | ", new string[]{ o.Item2, o.Item3})).ToArray()));
 		}
 
-		public string FormatWithContext(string fmt, Dictionary<string, string> context, int row_no, int rows_count)
+		public string FormatWithContext(string fmt, Dictionary<string, object> context, int row_no, int rows_count)
 		{
 			string rv = fmt.Replace("{index}", row_no.ToString()).Replace("{row_count}", rows_count.ToString());
-			foreach (KeyValuePair<string, string> kv in context)
+
+			Match match_forloop = null;
+			do
 			{
-				rv = rv.Replace("{{{" + kv.Key + "}}}", kv.Value);
+				Regex re_forloop = new Regex(@".*?(?<loop_begin>[{]{1})\s*for (?<loop_var>[a-zA-Z_]+[a-zA-Z0-9]*) in (?<loop_iterable>[a-zA-Z_]+[a-zA-Z0-9]*)}(?<loop_body>.*?){endfor(?<loop_end>[}]{1}).*");
+				match_forloop = re_forloop.Match(rv);
+				if (match_forloop.Success)
+				{
+					int loop_begin = match_forloop.Groups["loop_begin"].Index;
+					int loop_end = match_forloop.Groups["loop_end"].Index;
+					string loop_iterable = match_forloop.Groups["loop_iterable"].Value;
+					string loop_var = match_forloop.Groups["loop_var"].Value;
+					string loop_body = match_forloop.Groups["loop_body"].Value;
+					
+					IEnumerable<string> iterable = ConvertToEnumerable(context[loop_iterable].ToString());
+
+					string rvcopy = rv;
+					rv = rvcopy.Substring(0, loop_begin);
+					foreach (object o in iterable)
+					{
+						Dictionary<string, object> loop_context = new Dictionary<string, object>(context);
+						loop_context.Add(loop_var, o.ToString());
+
+						rv += FormatWithContext(loop_body, 
+								                loop_context, 
+									            row_no, 
+												rows_count);
+					}
+					rv += rvcopy.Substring(loop_end + 1);
+				}
+			} while(match_forloop.Success);
+
+			foreach (KeyValuePair<string, object> kv in context)
+			{
+				rv = rv.Replace("{{{" + kv.Key + "}}}", kv.Value.ToString());
 			}
 			return rv;
 		}
 
-		public Dictionary<string, string> MakeContext(string[] row)
+		public IEnumerable<string> ConvertToEnumerable(string input)
 		{
-			Dictionary<string, string> context = new Dictionary<string, string>();
+			try
+			{
+				return input.Split(',').Select(o => o.Trim());
+			}
+			catch(Exception)
+			{
+				return new string[]{};
+			}
+		}
+
+		public Dictionary<string, object> MakeContext(string[] row)
+		{
+			Dictionary<string, object> context = new Dictionary<string, object>();
 			int i = 0;
 			foreach (TreeNode n in this.treeView_columns.Nodes)
 			{
@@ -263,14 +398,9 @@ namespace Docusnap2Wiki
 			return context;
 		}
 
-		private void MainForm_Load(object sender, EventArgs e)
+		private void OnMainFormLoad(object sender, EventArgs e)
 		{
-			
-		}
-
-		private void OnSaveCategoryClick(object sender, EventArgs e)
-		{
-
+			this.SetupCategories();
 		}
 
 		private Site site;
@@ -292,15 +422,45 @@ namespace Docusnap2Wiki
 			}
 		}
 
+		void SetupCategories()
+		{
+			this.SetupCategories(this.GetAllCategories(), this.CurrentlySelectedCategories);
+		}
+
+		void SetupCategories(IEnumerable<string> cats, IEnumerable<string> checked_cats)
+		{
+			List<string> checked_cats_ = checked_cats.ToList();
+
+			this.treeView_categories.BeginUpdate();
+			this.treeView_categories.Nodes.Clear();
+
+			List<TreeNode> nodes = new List<TreeNode>();
+			foreach (string cat in cats)
+			{
+				TreeNode n = new TreeNode(cat);
+				nodes.Add(n);
+			}
+
+			this.treeView_categories.Nodes.AddRange(nodes.ToArray());
+
+			this.CurrentlySelectedCategories = checked_cats;
+
+			this.treeView_categories.EndUpdate();
+		}
+
 		void OnLoginSuccess(object sender, LoginSuccessEventArgs e)
 		{
-			this.site = new Site("http://artemis/MediaWiki", e.Username, e.Password);
+			this.site = new Site(e.WikiURL, e.Username, e.Password);
 		}
 
 		public void FillFormFromPage(Page p)
 		{
 			this.textBox_comment.Text = p.comment;
 			this.richTextBox_pagetext.Text = p.text;
+
+			List<string> cats_in_page = p.GetAllCategories().ToList();
+
+			this.CurrentlySelectedCategories = cats_in_page;
 		}
 
 		private void OnCheckBoxCsvHasColumnTitles_CheckedChanged(object sender, EventArgs e)
@@ -314,6 +474,263 @@ namespace Docusnap2Wiki
 		private void OnButtonHelpClick(object sender, EventArgs e)
 		{
 			System.Windows.Forms.Help.ShowHelp(this, System.IO.Path.Combine(Application.StartupPath, "helpfile.txt"));
+		}
+
+		private void OnEditorButtonItalicClick(object sender, EventArgs e)
+		{
+			this.WrapTextInSelection("''");
+		}
+
+		private void WrapTextIn(int start, int end, string before, string after)
+		{
+			string txt = this.richTextBox_pagetext.Text;
+			this.richTextBox_pagetext.Text = txt.Substring(0, start) + before + txt.Substring(start, end - start) + after + txt.Substring(end);
+		}
+
+		private void WrapTextInSelection(string with_)
+		{
+			this.WrapTextIn(this.richTextBox_pagetext.SelectionStart, this.richTextBox_pagetext.SelectionStart + this.richTextBox_pagetext.SelectionLength, with_, with_);
+		}
+
+		private void WrapTextInSelectionWithTag(string tag)
+		{
+			this.WrapTextIn(this.richTextBox_pagetext.SelectionStart, this.richTextBox_pagetext.SelectionStart + this.richTextBox_pagetext.SelectionLength, "<" + tag + ">", "</" + tag + ">");
+		}
+
+		private void WrapTextInSelectionWithLink()
+		{
+			string txt = this.richTextBox_pagetext.Text;
+			int start = this.richTextBox_pagetext.SelectionStart;
+			int end = this.richTextBox_pagetext.SelectionStart + this.richTextBox_pagetext.SelectionLength;
+			string before = "[[";
+			string after = "]]";
+			this.richTextBox_pagetext.Text = txt.Substring(0, start) + before + txt.Substring(start, end-start).Replace(' ', '_') + "|" + txt.Substring(start, end - start) + after + txt.Substring(end);
+		}
+
+		private void OnButtonEditorBoldClick(object sender, EventArgs e)
+		{
+			this.WrapTextInSelection("'''");
+		}
+
+		private void OnButtonEditorItalicBoldClick(object sender, EventArgs e)
+		{
+			this.WrapTextInSelection("'''''");
+		}
+
+		private void OnButtonEditorStrikeClick(object sender, EventArgs e)
+		{
+			this.WrapTextInSelectionWithTag("strike");
+		}
+
+		private void OnButtonEditorNowikiClick(object sender, EventArgs e)
+		{
+			this.WrapTextInSelectionWithTag("nowiki");
+		}
+
+		private void OnButtonEditorHeading2Click(object sender, EventArgs e)
+		{
+			this.WrapTextInSelection(" == ");
+		}
+
+		private void OnButtonEditorHeading3Click(object sender, EventArgs e)
+		{
+			this.WrapTextInSelection(" === ");
+		}
+
+		private void OnButtonEditorHeading4Click(object sender, EventArgs e)
+		{
+			this.WrapTextInSelection(" ==== ");
+		}
+
+		private void OnButtonEditorHeading5Click(object sender, EventArgs e)
+		{
+			this.WrapTextInSelection(" ===== ");
+		}
+
+		private void OnButtonEditorHeading6Click(object sender, EventArgs e)
+		{
+			this.WrapTextInSelection(" ====== ");
+		}
+
+		private void OnButtonEditorLinkClick(object sender, EventArgs e)
+		{
+			this.WrapTextInSelectionWithLink();
+		}
+
+		private void OnButtonEditorCodeClick(object sender, EventArgs e)
+		{
+			this.WrapTextInSelectionWithTag("code");
+		}
+
+		private void OnButtonEditorQuoteClick(object sender, EventArgs e)
+		{
+			this.WrapTextInSelectionWithTag("blockquote");
+		}
+
+		private void ChangeListLevel(string pointsign, int direction)
+		{
+			if (direction == 0)
+			{
+				throw new ArgumentException("direction must not be greater or less than 0.");
+			}
+
+			string newline = "\n";
+
+			string txt = this.richTextBox_pagetext.Text;
+			int start = this.richTextBox_pagetext.SelectionStart;
+
+			List<string> lines = txt.Split(new string[] { newline },StringSplitOptions.None).ToList();
+			List<string> res = new List<string>();
+
+			int line_index = 0;
+			int count = 0;
+			foreach (string line in lines)
+			{
+				count += line.Length + 1;
+				if (start < count)
+				{
+					break;
+				}
+				line_index++;
+			}
+
+			int i = 0;
+			while (i < line_index)
+			{
+				res.Add(lines[i++]);
+			}
+
+			// get index of pointsign and add another pointsign or strip it, according to *direction*
+			string ln = lines[line_index];
+			if (ln.IndexOf(pointsign) == -1)
+			{
+				res.Add((direction < 0 ? string.Empty : pointsign) + ln);
+			}
+			else
+			{
+				for (int j = 0; j < ln.Length; j++)
+				{
+					if (ln.Substring(j, 1) == pointsign)
+					{
+						if (direction < 0)
+						{
+							res.Add(ln.Substring(0, j) + ln.Substring(j + 1));
+						}
+						else
+						{
+							res.Add(ln.Substring(0, j) + pointsign + ln.Substring(j));
+						}
+						break;
+					}
+				}
+			}
+
+			while (++i < lines.Count)
+			{
+				res.Add(lines[i]);
+			}
+
+			string newtext =string.Join(newline, res.ToArray());
+			
+
+			if (newtext != txt)
+			{
+				this.richTextBox_pagetext.Text = newtext;
+				this.richTextBox_pagetext.SelectionStart = Math.Max((direction < 0 ? start - 1 : start), 0);
+			}
+		}
+
+		private void OnButtonEditorListsNumberedLeftClick(object sender, EventArgs e)
+		{
+			this.ChangeListLevel("#", -1);
+		}
+
+
+		private void OnButtonEditorListsNumberedRightClick(object sender, EventArgs e)
+		{
+			ChangeListLevel("#", 1);
+		}
+
+		private void OnButtonEditorListsBulletsLeftClick(object sender, EventArgs e)
+		{
+			ChangeListLevel("*", -1);
+		}
+
+		private void OnButtonEditorListsBulletsRightClick(object sender, EventArgs e)
+		{
+			ChangeListLevel("*", 1);
+		}
+
+		public bool IsPageProtected(string pagetitle)
+		{
+			string[] bits = { Site.site, Site.indexPath, "index.php?title=", 
+									System.Uri.EscapeUriString(pagetitle) };
+			string src = Site.GetPageHTM(string.Join("", bits));
+			return !src.Contains("...");
+		}
+
+		private string[] GetAllCategories()
+		{
+			List<string> cats = new List<string>();
+			string[] bits = { Site.site, Site.indexPath, 
+								"api.php?format=xml&action=query&list=allcategories" };
+			string src = Site.GetPageHTM(string.Join("", bits));
+
+			XmlDocument doc = new XmlDocument();
+			doc.LoadXml(src);
+			XmlNode node = doc.SelectSingleNode("/api/query/allcategories");
+			foreach (XmlNode n in node)
+			{
+				cats.Add(n.InnerText.Trim());
+			}
+			return cats.ToArray();
+		}
+
+		public string[] Categories
+		{
+			get
+			{
+				if (this.categories == null)
+				{
+					this.categories = this.GetAllCategories();
+				}
+				return this.categories;
+			}
+			set
+			{
+				this.categories = value;
+			}
+		}
+
+		List<string> currently_selected_categories;
+		public IEnumerable<string> CurrentlySelectedCategories
+		{
+			get
+			{
+				if (this.currently_selected_categories == null)
+				{
+					this.currently_selected_categories = new List<string>();			
+
+					foreach (TreeNode n in this.treeView_categories.Nodes)
+					{
+						if (n.Checked)
+						{
+							currently_selected_categories.Add(n.Text);
+						}
+					}
+				}
+				return this.currently_selected_categories;
+			}
+			set
+			{
+				List<string> cats = value.Union(this.currently_selected_categories).ToList();
+				this.currently_selected_categories = null;
+				
+				foreach (TreeNode n in this.treeView_categories.Nodes)
+				{
+					n.Checked = cats.Contains(n.Text);
+				}
+			}
 		}
 	}
 

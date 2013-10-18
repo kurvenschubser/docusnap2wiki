@@ -118,9 +118,29 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <metadata name="timer_template.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-    <value>20, 27</value>
+    <value>31, 37</value>
   </metadata>
   <metadata name="helpProvider.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-    <value>159, 17</value>
+    <value>160, 23</value>
   </metadata>
+  <assembly alias="System.Drawing" name="System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
+  <data name="$this.Icon" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+    <value>
+        AAABAAEAEBAAAAEAGABoAwAAFgAAACgAAAAQAAAAIAAAAAEAGAAAAAAAAAMAAAAAAAAAAAAAAAAAAAAA
+        AACAQAKgZkKAcECAZEibcECgcECBcECBcECAcECAc0OAcECAckKCZUCAYUCgZkKgZkKCXSj4+P/4/vr4
+        +P74/Pj8/fv8/fv8/fv8/fv8/fv8/fv8/fv8/fj8/fj/+P2QQSCRRCjw+P/4/vD6+Pj0/P36/P36/P36
+        /P34/P36/Pj6/Pz8/Pz4/Pz6+P7+/PiQQSCSYSn++Pj4/Pj8+fb8/PD8/Pn8/Pn8/Pn4+Pr8+PD++fj4
+        +vz6/Pr8/Pz8/PygZkKCQij8/PH6+P/4/PT+/vr+//3+//3+//36//X+//r8//X5/vT/+Pj8/Pz+/v6g
+        ZkKQYSj+8f34/uAzIMAAAMAgAMAgANAgANAgANAiANAAAMAAAMD+/PL8/Pz+/v6QQSCSZCj+8Pj4/PBw
+        SN8AANggANogANwgANwgANAFANoAAMAAAMD8+fP8/P78/v6gZkKUYCj4+P7w+Pzw+Pzw+Pzw+Pzw+Pzw
+        +Pzw+Pzw+Pzw+Pzw+Pz4+P7+/v3+/v2gZkKVQCH4+fDw+Pzw+Pzw+Pzw+Pzw+Pzw+Pzw+Pzw+Pzw+Pzw
+        +Pz9/vD8/v79/v6QQSCPXiD9/fD9+PhoRMQgAMgmANgmANgmANglANAgANgAANQAAMD99fr6/vz6/vyQ
+        QSCVQSD4+PD4+Pw4I8AAAMARAMwRAMwRAMwAAMAAAMAAANAAAMD48Pz//Pj//PiQQSCUXDD4+P7w/PD8
+        /PD8+/38//38//38//38//r+//j++/z4/Pv5/Pj6//j5//qgZkKQQSD4/Pjw+Pz8/Pj6/Pj6/Pr6/Pr6
+        /Pr6/Pr6/Pv6/Pr6/vr6/Pr9/Pz4+v+gZkKQQCD6+Pb4+Pz4+P34/Pz4/Pz4/Pz4/Pz4/Pz4/Pz4/Pz4
+        /Pz4/Pz8/vj4/v6gZkKCQSj8/PT8+Pj8/Pz+/Pz+/f3+/Pz+/P7+/P7+/P7+/Pz+/f35/Pzw+P75/P+g
+        ZkKAQACAXCiGWSCRXCyTQSmQXSiRQCmRXimQXSiSQSqQQCiQXiiQXymQWCKJWTQAAAAAAAAAAAAAAAAA
+        AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+</value>
+  </data>
 </root>
