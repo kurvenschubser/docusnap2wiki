@@ -76,6 +76,7 @@
 			this.treeView_categories = new System.Windows.Forms.TreeView();
 			this.groupBox_editor_categories = new System.Windows.Forms.GroupBox();
 			this.button_editor_category_add = new System.Windows.Forms.Button();
+			this.checkBox_compact = new System.Windows.Forms.CheckBox();
 			this.groupBox_editor_headings.SuspendLayout();
 			this.groupBox_editor_styles.SuspendLayout();
 			this.groupBox_editor_diverse.SuspendLayout();
@@ -532,11 +533,23 @@
 			this.button_editor_category_add.UseVisualStyleBackColor = true;
 			this.button_editor_category_add.Click += new System.EventHandler(this.OnButtonEditorCategoryAddClick);
 			// 
+			// checkBox_compact
+			// 
+			this.checkBox_compact.AutoSize = true;
+			this.checkBox_compact.Location = new System.Drawing.Point(279, 36);
+			this.checkBox_compact.Name = "checkBox_compact";
+			this.checkBox_compact.Size = new System.Drawing.Size(252, 17);
+			this.checkBox_compact.TabIndex = 41;
+			this.checkBox_compact.Text = "Kompaktiere anhand erster ausgewählter Spalte";
+			this.checkBox_compact.UseVisualStyleBackColor = true;
+			this.checkBox_compact.CheckedChanged += new System.EventHandler(this.OnCheckBoxCompactCheckedChanged);
+			// 
 			// MainForm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(660, 737);
+			this.Controls.Add(this.checkBox_compact);
 			this.Controls.Add(this.groupBox_editor_categories);
 			this.Controls.Add(this.treeView_categories);
 			this.Controls.Add(this.label_categories);
@@ -623,6 +636,7 @@
 		private System.Windows.Forms.TreeView treeView_categories;
 		private System.Windows.Forms.GroupBox groupBox_editor_categories;
 		private System.Windows.Forms.Button button_editor_category_add;
+		private System.Windows.Forms.CheckBox checkBox_compact;
 	}
 }
 

@@ -22,6 +22,14 @@ namespace Docusnap2Wiki
 		List<string[]> rows;
 		string[] categories;
 
+		Regex RE_CATEGORY = new Regex(@"\[\[Kategorie:.*\]\]");
+		Regex RE_FORLOOP = new Regex(
+			@".*?(?<loop_begin>[{]{1})\s*for"
+				+ "(?<loop_var>[a-zA-Z_]+[a-zA-Z0-9]*) in "
+				+ "(?<loop_iterable>[a-zA-Z_]+[a-zA-Z0-9]*)}(?<loop_body>.*)"
+				+ "(?<loop_end>{endfor}).*"
+			, RegexOptions.Singleline);
+
 		public MainForm()
 		{
 			InitializeComponent();
@@ -162,8 +170,6 @@ namespace Docusnap2Wiki
 		private void OnPageTitleTextChanged(object sender, EventArgs e)
 		{
 			this.timer_template.Start();
-
-			
 		}
 
 		private void OnBrowseInputFileClick(object sender, EventArgs e)
@@ -173,76 +179,98 @@ namespace Docusnap2Wiki
 			dlg.Filter = "CSV Dateien (*.csv)|*.csv|Alle Dateien (*.*)|*.*";
 			if (dlg.ShowDialog() == System.Windows.Forms.DialogResult.OK)
 			{
-				this.ReadCSV(dlg.FileName, this.checkBox_csv_has_column_titles.Checked);
 				this.textBox_input_path.Text = dlg.FileName;
+				IEnumerator<string[]> rows_enumerator = this.ReadCSV(dlg.FileName).GetEnumerator();
+				if (!rows_enumerator.MoveNext())
+				{
+					MessageBox.Show("Datei enthält keine Einträge");
+					return;
+				}
+
+				if (this.checkBox_csv_has_column_titles.Checked)
+				{
+					try
+					{
+						this.UpdateColumnNodes(rows_enumerator.Current);
+					}
+					catch (Microsoft.VisualBasic.FileIO.MalformedLineException ex)
+					{
+						MessageBox.Show(ex.Message);
+						return;
+					}
+				}
+				else
+				{
+					this.UpdateColumnNodes(
+						Enumerable.Range(1, rows_enumerator.Current.Length).Select(
+							o => string.Format("Spalte {0}", o)
+						).ToArray()
+					);
+				}
+
+				this.UpdateCSVInput(rows_enumerator);			
 			}
 		}
 
-		void ReadCSV(string filepath, bool has_column_titles)
+		private void UpdateCSVInput(IEnumerator<string[]> rows_enumerator)
+		{
+			List<string[]> new_rows = new List<string[]>();
+			try
+			{
+				while (rows_enumerator.MoveNext())
+				{
+					new_rows.Add(rows_enumerator.Current);
+				}
+			}
+			catch (Microsoft.VisualBasic.FileIO.MalformedLineException ex)
+			{
+				MessageBox.Show(ex.Message);
+			}
+
+			if (this.checkBox_compact.Checked)
+			{
+				List<int> selected_columns = new List<int>(this.SelectedCSVColumns);
+				if (selected_columns.Count == 0)
+				{
+					MessageBox.Show("Keine Spalten ausgewählt");
+				}
+				else
+				{
+					new_rows = this.CompactRows(new_rows, selected_columns[0]);
+				}
+			}
+
+			this.Rows = new_rows;	
+		}
+
+		void UpdateColumnNodes(string[] colnames)
+		{
+			this.treeView_columns.BeginUpdate();
+			this.treeView_columns.Nodes.Clear();
+			foreach (string colname in colnames)
+			{
+				this.treeView_columns.Nodes.Add(colname);
+			}
+			this.treeView_columns.EndUpdate();
+		}
+
+		IEnumerable<string[]> ReadCSV(string filepath)
 		{
 			Microsoft.VisualBasic.FileIO.TextFieldParser p = new Microsoft.VisualBasic.FileIO.TextFieldParser(filepath);
 			p.TextFieldType = Microsoft.VisualBasic.FileIO.FieldType.Delimited;
 			p.Delimiters = new String[] {";"};
-			
-			string[] currentRow;
-			List<string[]> rows = new List<string[]>();
 
-			this.treeView_columns.BeginUpdate();
-			this.treeView_columns.Nodes.Clear();
-
-			// Loop through all of the fields in the file.  
-			//If any lines are corrupt, report an error and continue parsing.  
-			long i = 1;
 			while (!p.EndOfData)
 			{
-				try
-				{
-					currentRow = p.ReadFields();
-					if (i == 1)
-					{
-						if (has_column_titles)
-						{
-							foreach (string val in currentRow)
-							{
-								TreeNode n = new TreeNode(val);
-								n.Checked = true;
-								this.treeView_columns.Nodes.Add(n);
-							}
-						}
-						else
-						{
-							for (int j = 1; j <= currentRow.Length; j++)
-							{
-								TreeNode n = new TreeNode(string.Format("Spalte {0}", j.ToString()));
-								n.Checked = true;
-								this.treeView_columns.Nodes.Add(n);
-							}
-							rows.Add(currentRow);
-						}
-					}
-					else
-					{
-						rows.Add(currentRow);
-					}
-				}
-				catch (Microsoft.VisualBasic.FileIO.MalformedLineException ex)
-				{
-					MessageBox.Show(string.Format("Zeile {0}: '{1}' ist ungültig und wird übersprungen.", i, ex.Message ));
-				}
-				i++;
+				yield return p.ReadFields();
 			}
-
-			this.treeView_columns.EndUpdate();
-
-			this.Rows = rows;
 		}
 
 		private void OnUploadClick(object sender, EventArgs e)
 		{
 			Cursor.Current = Cursors.WaitCursor;
 
-			System.Text.RegularExpressions.Regex re = new System.Text.RegularExpressions.Regex(@"\[\[Kategorie:.*\]\]");
-			System.Text.RegularExpressions.Match m = re.Match(this.richTextBox_pagetext.Text);
+			System.Text.RegularExpressions.Match m = RE_CATEGORY.Match(this.richTextBox_pagetext.Text);
 			if (!m.Success)
 			{
 				DialogResult answer = MessageBox.Show("Die Seite ist keiner Kategorie ([[Kategoriename]]) zugeordnet. Wollen Sie dennoch fortfahren?"
@@ -360,12 +388,11 @@ namespace Docusnap2Wiki
 		public string FormatWithContext(string fmt, Dictionary<string, object> context, int row_no, int rows_count)
 		{
 			string rv = fmt.Replace("{index}", row_no.ToString()).Replace("{row_count}", rows_count.ToString());
-			Regex re_forloop = new Regex(@".*?(?<loop_begin>[{]{1})\s*for (?<loop_var>[a-zA-Z_]+[a-zA-Z0-9]*) in (?<loop_iterable>[a-zA-Z_]+[a-zA-Z0-9]*)}(?<loop_body>.*)(?<loop_end>{endfor}).*", RegexOptions.Singleline);
-
+			
 			Match match_forloop = null;
 			do
 			{
-				match_forloop = re_forloop.Match(rv);
+				match_forloop = RE_FORLOOP.Match(rv);
 				if (match_forloop.Success)
 				{
 					int loop_begin = match_forloop.Groups["loop_begin"].Index;
@@ -494,9 +521,34 @@ namespace Docusnap2Wiki
 
 		private void OnCheckBoxCsvHasColumnTitlesCheckedChanged(object sender, EventArgs e)
 		{
-			if (!(string.IsNullOrEmpty(this.textBox_input_path.Text)))
+			IEnumerator<string[]> rows_enumerator = 
+				this.ReadCSV(this.textBox_input_path.Text).GetEnumerator();
+
+			if (!rows_enumerator.MoveNext())
 			{
-				ReadCSV(this.textBox_input_path.Text, this.checkBox_csv_has_column_titles.Checked);
+				MessageBox.Show("Datei enthält keine Einträge");
+				return;
+			}
+
+			if (this.checkBox_csv_has_column_titles.Checked)
+			{
+				try
+				{
+					this.UpdateColumnNodes(rows_enumerator.Current);
+				}
+				catch (Microsoft.VisualBasic.FileIO.MalformedLineException ex)
+				{
+					MessageBox.Show(ex.Message);
+					return;
+				}
+			}
+			else
+			{
+				this.UpdateColumnNodes(
+					Enumerable.Range(1, rows_enumerator.Current.Length).Select(
+						o => string.Format("Spalte {0}", o)
+					).ToArray()
+				);
 			}
 		}
 
@@ -765,6 +817,99 @@ namespace Docusnap2Wiki
 				foreach (TreeNode n in this.treeView_categories.Nodes)
 				{
 					n.Checked = cats.Contains(n.Text);
+				}
+			}
+		}
+
+		private void OnCheckBoxCompactCheckedChanged(object sender, EventArgs e)
+		{
+			this.UpdateCSVInput(this.CopyRows(this.Rows).GetEnumerator());
+		}
+
+		IEnumerable<string[]> CopyRows(List<string[]> rows_)
+		{
+			// deep copy 'Rows'
+			foreach (string[] row in rows)
+			{
+				List<string> row_copy = new List<string>();
+				foreach (string s in row)
+				{
+					row_copy.Add(string.Copy(s));
+				}
+				yield return row_copy.ToArray();
+			}
+		}
+
+		List<string[]> CompactRows(List<string[]> rows, int groupby_column)
+		{
+			if (rows.Count == 0)
+			{
+				return rows;
+			}
+			
+			int n_row_fields = rows[0].Length;
+
+			if (groupby_column >= n_row_fields)
+			{
+				throw new IndexOutOfRangeException(
+					"groupby_column >= n_row_fields");
+			}
+
+			List<string[]> compacted = new List<string[]>();
+
+			IEnumerable<IGrouping<string, string[]>> groupings = 
+				rows.GroupBy(arr => arr[groupby_column]);
+
+			List<List<string>> row = new List<List<string>>();
+			foreach(IGrouping<string, string[]> grouping in groupings)
+			{
+				// generate lists for compacting values
+				for(int i = 0; i < n_row_fields; ++i)
+				{
+					// there's only one value in this list
+					if (i == groupby_column)
+					{
+						row.Add(new List<string>(new string[]{grouping.Key}));
+					}
+					else
+					{
+						row.Add(new List<string>());
+					}
+				}
+				
+
+				foreach(string[] r in grouping)
+				{
+					int j = 0;
+					foreach(string v in r)
+					{
+						if (j != groupby_column)
+						{
+							row[j].Add(v);
+						}
+						++j;
+					}
+				}
+
+				compacted.Add(row.Select(
+					o => string.Join(", ", o.ToArray())).ToArray());
+			}
+
+			return compacted;
+		}
+
+		IEnumerable<int> SelectedCSVColumns
+		{
+			get
+			{
+				int i = 0;
+				foreach (TreeNode n in this.treeView_columns.Nodes)
+				{
+					if (n.Checked)
+					{
+						yield return i;
+					}
+					++i;
 				}
 			}
 		}
