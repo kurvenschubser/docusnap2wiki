@@ -74,10 +74,13 @@
 			this.button_editor_lists_numbered_left = new System.Windows.Forms.Button();
 			this.label_categories = new System.Windows.Forms.Label();
 			this.treeView_categories = new System.Windows.Forms.TreeView();
+			this.groupBox_editor_categories = new System.Windows.Forms.GroupBox();
+			this.button_editor_category_add = new System.Windows.Forms.Button();
 			this.groupBox_editor_headings.SuspendLayout();
 			this.groupBox_editor_styles.SuspendLayout();
 			this.groupBox_editor_diverse.SuspendLayout();
 			this.groupBox_editor_lists.SuspendLayout();
+			this.groupBox_editor_categories.SuspendLayout();
 			this.SuspendLayout();
 			// 
 			// richTextBox_pagetext
@@ -214,7 +217,7 @@
 			this.checkBox_csv_has_column_titles.TabIndex = 24;
 			this.checkBox_csv_has_column_titles.Text = "CSV hat Spaltenüberschriften";
 			this.checkBox_csv_has_column_titles.UseVisualStyleBackColor = true;
-			this.checkBox_csv_has_column_titles.CheckedChanged += new System.EventHandler(this.OnCheckBoxCsvHasColumnTitles_CheckedChanged);
+			this.checkBox_csv_has_column_titles.CheckedChanged += new System.EventHandler(this.OnCheckBoxCsvHasColumnTitlesCheckedChanged);
 			// 
 			// treeView_columns
 			// 
@@ -509,11 +512,32 @@
 			this.treeView_categories.Size = new System.Drawing.Size(423, 116);
 			this.treeView_categories.TabIndex = 39;
 			// 
+			// groupBox_editor_categories
+			// 
+			this.groupBox_editor_categories.Controls.Add(this.button_editor_category_add);
+			this.groupBox_editor_categories.Location = new System.Drawing.Point(539, 534);
+			this.groupBox_editor_categories.Name = "groupBox_editor_categories";
+			this.groupBox_editor_categories.Size = new System.Drawing.Size(109, 44);
+			this.groupBox_editor_categories.TabIndex = 40;
+			this.groupBox_editor_categories.TabStop = false;
+			this.groupBox_editor_categories.Text = "Kategorien";
+			// 
+			// button_editor_category_add
+			// 
+			this.button_editor_category_add.Location = new System.Drawing.Point(8, 17);
+			this.button_editor_category_add.Name = "button_editor_category_add";
+			this.button_editor_category_add.Size = new System.Drawing.Size(95, 23);
+			this.button_editor_category_add.TabIndex = 0;
+			this.button_editor_category_add.Text = "Hinzufügen";
+			this.button_editor_category_add.UseVisualStyleBackColor = true;
+			this.button_editor_category_add.Click += new System.EventHandler(this.OnButtonEditorCategoryAddClick);
+			// 
 			// MainForm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(660, 737);
+			this.Controls.Add(this.groupBox_editor_categories);
 			this.Controls.Add(this.treeView_categories);
 			this.Controls.Add(this.label_categories);
 			this.Controls.Add(this.groupBox_editor_lists);
@@ -545,6 +569,7 @@
 			this.groupBox_editor_diverse.ResumeLayout(false);
 			this.groupBox_editor_lists.ResumeLayout(false);
 			this.groupBox_editor_lists.PerformLayout();
+			this.groupBox_editor_categories.ResumeLayout(false);
 			this.ResumeLayout(false);
 			this.PerformLayout();
 
@@ -596,6 +621,8 @@
 		private System.Windows.Forms.Button button_editor_lists_numbered_left;
 		private System.Windows.Forms.Label label_categories;
 		private System.Windows.Forms.TreeView treeView_categories;
+		private System.Windows.Forms.GroupBox groupBox_editor_categories;
+		private System.Windows.Forms.Button button_editor_category_add;
 	}
 }
 

@@ -56,8 +56,14 @@ namespace Docusnap2Wiki
 
 			List<string> cats = new List<string>();
 
+			int caret_pos = this.richTextBox_pagetext.SelectionStart;
+
 			foreach (Match m in matches)
 			{
+				if (m.Groups[1].Index <= caret_pos && caret_pos <= m.Groups[1].Index + m.Groups[1].Length)
+				{
+					continue;
+				}
 				cats.Add(m.Groups[1].Value);
 			}
 
@@ -89,9 +95,11 @@ namespace Docusnap2Wiki
 		{
 			string txt = this.richTextBox_pagetext.Text;
 
-			if (!txt.Contains(cat))
+			var catstr = "[[Kategorie:" + cat + "]]";
+
+			if (!txt.Contains(catstr))
 			{
-				txt = "[[Kategorie:" + cat + "]]\n" + txt;
+				txt = catstr + "\n" + txt;
 			}
 
 			this.richTextBox_pagetext.Text = txt;
@@ -162,7 +170,7 @@ namespace Docusnap2Wiki
 		{
 			FileDialog dlg = new OpenFileDialog();
 			dlg.Title = "CSV Datei wählen";
-			dlg.Filter = "Csv Dateien (*.csv)|*.csv|Alle Dateien (*.*)|*.*";
+			dlg.Filter = "CSV Dateien (*.csv)|*.csv|Alle Dateien (*.*)|*.*";
 			if (dlg.ShowDialog() == System.Windows.Forms.DialogResult.OK)
 			{
 				this.ReadCSV(dlg.FileName, this.checkBox_csv_has_column_titles.Checked);
@@ -291,7 +299,7 @@ namespace Docusnap2Wiki
 				if (string.IsNullOrEmpty(pagetitle))
 				{
 					MessageBox.Show("Zeile " + current_row_no.ToString() + ": Der Seitentitel ist leer. Die Seite kann nicht angelegt werden.", "Leerer Seitentitel");
-					do_generate = false;
+					return;
 				}
 				else
 				{
@@ -299,7 +307,12 @@ namespace Docusnap2Wiki
 					p.Load();
 					if (!p.IsEmpty())
 					{
-						DialogResult answer = MessageBox.Show("Die Seite gibt es bereits. Wollen Sie sie überschreiben?", "Existierende Seite", MessageBoxButtons.YesNo);
+						DialogResult answer = MessageBox.Show(
+							string.Format("Die Seite {0} gibt es bereits. Wollen Sie sie überschreiben?", pagetitle)
+							, "Existierende Seite"
+							, MessageBoxButtons.YesNo
+						);
+
 						if (answer == System.Windows.Forms.DialogResult.No)
 						{
 							do_generate = false;
@@ -325,22 +338,38 @@ namespace Docusnap2Wiki
 
 			Cursor.Current = Cursors.Default;
 
-			MessageBox.Show(string.Join("\n", generated_contents.Select(o => o.Item1 ? "Angelegt: " : "Nicht angelegt: " + string.Join(" | ", new string[]{ o.Item2, o.Item3})).ToArray()));
+			int generated_pages = generated_contents.Count(o => o.Item1);
+			new MessageBoxWithDetails(
+				"Zusammenfassung"
+				, generated_pages > 0 
+					? string.Format("{0} von {1} Einträgen angelegt.", generated_pages, generated_contents.Count) 
+					: "Keine Einträge angelegt."
+				, string.Join(
+					System.Environment.NewLine
+					, generated_contents.Select(
+						o => string.Format(
+							"{0}: {1}"
+							, (o.Item1 ? "Angelegt" : "Nicht angelegt")
+							, o.Item2
+						)
+					).ToArray()
+				)
+			).ShowDialog();
 		}
 
 		public string FormatWithContext(string fmt, Dictionary<string, object> context, int row_no, int rows_count)
 		{
 			string rv = fmt.Replace("{index}", row_no.ToString()).Replace("{row_count}", rows_count.ToString());
+			Regex re_forloop = new Regex(@".*?(?<loop_begin>[{]{1})\s*for (?<loop_var>[a-zA-Z_]+[a-zA-Z0-9]*) in (?<loop_iterable>[a-zA-Z_]+[a-zA-Z0-9]*)}(?<loop_body>.*)(?<loop_end>{endfor}).*", RegexOptions.Singleline);
 
 			Match match_forloop = null;
 			do
 			{
-				Regex re_forloop = new Regex(@".*?(?<loop_begin>[{]{1})\s*for (?<loop_var>[a-zA-Z_]+[a-zA-Z0-9]*) in (?<loop_iterable>[a-zA-Z_]+[a-zA-Z0-9]*)}(?<loop_body>.*?){endfor(?<loop_end>[}]{1}).*");
 				match_forloop = re_forloop.Match(rv);
 				if (match_forloop.Success)
 				{
 					int loop_begin = match_forloop.Groups["loop_begin"].Index;
-					int loop_end = match_forloop.Groups["loop_end"].Index;
+					int loop_end = match_forloop.Groups["loop_end"].Index + match_forloop.Groups["loop_end"].Length;
 					string loop_iterable = match_forloop.Groups["loop_iterable"].Value;
 					string loop_var = match_forloop.Groups["loop_var"].Value;
 					string loop_body = match_forloop.Groups["loop_body"].Value;
@@ -359,7 +388,7 @@ namespace Docusnap2Wiki
 									            row_no, 
 												rows_count);
 					}
-					rv += rvcopy.Substring(loop_end + 1);
+					rv += rvcopy.Substring(loop_end);
 				}
 			} while(match_forloop.Success);
 
@@ -463,7 +492,7 @@ namespace Docusnap2Wiki
 			this.CurrentlySelectedCategories = cats_in_page;
 		}
 
-		private void OnCheckBoxCsvHasColumnTitles_CheckedChanged(object sender, EventArgs e)
+		private void OnCheckBoxCsvHasColumnTitlesCheckedChanged(object sender, EventArgs e)
 		{
 			if (!(string.IsNullOrEmpty(this.textBox_input_path.Text)))
 			{
@@ -565,6 +594,11 @@ namespace Docusnap2Wiki
 		private void OnButtonEditorQuoteClick(object sender, EventArgs e)
 		{
 			this.WrapTextInSelectionWithTag("blockquote");
+		}
+
+		private void OnButtonEditorCategoryAddClick(object sender, EventArgs e)
+		{
+			this.AddCategoryToPage("Kategoriename");
 		}
 
 		private void ChangeListLevel(string pointsign, int direction)
@@ -723,7 +757,9 @@ namespace Docusnap2Wiki
 			}
 			set
 			{
-				List<string> cats = value.Union(this.currently_selected_categories).ToList();
+				List<string> cats = (this.currently_selected_categories == null)
+					? new List<string>(value)
+					: value.Union(this.currently_selected_categories).ToList();
 				this.currently_selected_categories = null;
 				
 				foreach (TreeNode n in this.treeView_categories.Nodes)
