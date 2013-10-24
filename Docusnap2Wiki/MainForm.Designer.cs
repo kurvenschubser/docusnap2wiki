@@ -47,7 +47,6 @@
 			this.checkBox_csv_has_column_titles = new System.Windows.Forms.CheckBox();
 			this.treeView_columns = new System.Windows.Forms.TreeView();
 			this.helpProvider = new System.Windows.Forms.HelpProvider();
-			this.button_help = new System.Windows.Forms.Button();
 			this.button_editor_italic = new System.Windows.Forms.Button();
 			this.button_editor_bold = new System.Windows.Forms.Button();
 			this.button_editor_italic_bold = new System.Windows.Forms.Button();
@@ -77,17 +76,20 @@
 			this.groupBox_editor_categories = new System.Windows.Forms.GroupBox();
 			this.button_editor_category_add = new System.Windows.Forms.Button();
 			this.checkBox_compact = new System.Windows.Forms.CheckBox();
+			this.menuStrip = new System.Windows.Forms.MenuStrip();
+			this.ToolStripMenuItem_help = new System.Windows.Forms.ToolStripMenuItem();
 			this.groupBox_editor_headings.SuspendLayout();
 			this.groupBox_editor_styles.SuspendLayout();
 			this.groupBox_editor_diverse.SuspendLayout();
 			this.groupBox_editor_lists.SuspendLayout();
 			this.groupBox_editor_categories.SuspendLayout();
+			this.menuStrip.SuspendLayout();
 			this.SuspendLayout();
 			// 
 			// richTextBox_pagetext
 			// 
 			this.richTextBox_pagetext.Anchor = System.Windows.Forms.AnchorStyles.Top;
-			this.richTextBox_pagetext.Location = new System.Drawing.Point(107, 230);
+			this.richTextBox_pagetext.Location = new System.Drawing.Point(103, 248);
 			this.richTextBox_pagetext.Name = "richTextBox_pagetext";
 			this.richTextBox_pagetext.Size = new System.Drawing.Size(425, 348);
 			this.richTextBox_pagetext.TabIndex = 0;
@@ -97,7 +99,7 @@
 			// 
 			this.label_pagetext.Anchor = System.Windows.Forms.AnchorStyles.Top;
 			this.label_pagetext.AutoSize = true;
-			this.label_pagetext.Location = new System.Drawing.Point(5, 234);
+			this.label_pagetext.Location = new System.Drawing.Point(1, 252);
 			this.label_pagetext.Name = "label_pagetext";
 			this.label_pagetext.Size = new System.Drawing.Size(54, 13);
 			this.label_pagetext.TabIndex = 1;
@@ -106,7 +108,7 @@
 			// textBox_pagetitle
 			// 
 			this.textBox_pagetitle.Anchor = System.Windows.Forms.AnchorStyles.Top;
-			this.textBox_pagetitle.Location = new System.Drawing.Point(107, 204);
+			this.textBox_pagetitle.Location = new System.Drawing.Point(103, 222);
 			this.textBox_pagetitle.Name = "textBox_pagetitle";
 			this.textBox_pagetitle.Size = new System.Drawing.Size(425, 20);
 			this.textBox_pagetitle.TabIndex = 2;
@@ -115,7 +117,7 @@
 			// 
 			this.label_pagetitle.Anchor = System.Windows.Forms.AnchorStyles.Top;
 			this.label_pagetitle.AutoSize = true;
-			this.label_pagetitle.Location = new System.Drawing.Point(5, 208);
+			this.label_pagetitle.Location = new System.Drawing.Point(1, 226);
 			this.label_pagetitle.Name = "label_pagetitle";
 			this.label_pagetitle.Size = new System.Drawing.Size(53, 13);
 			this.label_pagetitle.TabIndex = 3;
@@ -124,7 +126,7 @@
 			// button_upload
 			// 
 			this.button_upload.Anchor = System.Windows.Forms.AnchorStyles.Top;
-			this.button_upload.Location = new System.Drawing.Point(539, 707);
+			this.button_upload.Location = new System.Drawing.Point(535, 725);
 			this.button_upload.Name = "button_upload";
 			this.button_upload.Size = new System.Drawing.Size(112, 24);
 			this.button_upload.TabIndex = 6;
@@ -135,7 +137,7 @@
 			// textBox_input_path
 			// 
 			this.textBox_input_path.Anchor = System.Windows.Forms.AnchorStyles.Top;
-			this.textBox_input_path.Location = new System.Drawing.Point(107, 9);
+			this.textBox_input_path.Location = new System.Drawing.Point(103, 27);
 			this.textBox_input_path.Name = "textBox_input_path";
 			this.textBox_input_path.Size = new System.Drawing.Size(425, 20);
 			this.textBox_input_path.TabIndex = 9;
@@ -144,7 +146,7 @@
 			// 
 			this.label_inputfile.Anchor = System.Windows.Forms.AnchorStyles.Top;
 			this.label_inputfile.AutoSize = true;
-			this.label_inputfile.Location = new System.Drawing.Point(4, 9);
+			this.label_inputfile.Location = new System.Drawing.Point(0, 27);
 			this.label_inputfile.Name = "label_inputfile";
 			this.label_inputfile.Size = new System.Drawing.Size(59, 13);
 			this.label_inputfile.TabIndex = 10;
@@ -153,7 +155,7 @@
 			// button_browse_inputfile
 			// 
 			this.button_browse_inputfile.Anchor = System.Windows.Forms.AnchorStyles.Top;
-			this.button_browse_inputfile.Location = new System.Drawing.Point(539, 8);
+			this.button_browse_inputfile.Location = new System.Drawing.Point(535, 26);
 			this.button_browse_inputfile.Name = "button_browse_inputfile";
 			this.button_browse_inputfile.Size = new System.Drawing.Size(112, 23);
 			this.button_browse_inputfile.TabIndex = 11;
@@ -165,7 +167,7 @@
 			// 
 			this.label_columns.Anchor = System.Windows.Forms.AnchorStyles.Top;
 			this.label_columns.AutoSize = true;
-			this.label_columns.Location = new System.Drawing.Point(4, 62);
+			this.label_columns.Location = new System.Drawing.Point(0, 80);
 			this.label_columns.Name = "label_columns";
 			this.label_columns.Size = new System.Drawing.Size(29, 13);
 			this.label_columns.TabIndex = 13;
@@ -174,7 +176,7 @@
 			// label_comment
 			// 
 			this.label_comment.AutoSize = true;
-			this.label_comment.Location = new System.Drawing.Point(5, 712);
+			this.label_comment.Location = new System.Drawing.Point(1, 730);
 			this.label_comment.Name = "label_comment";
 			this.label_comment.Size = new System.Drawing.Size(60, 13);
 			this.label_comment.TabIndex = 19;
@@ -182,7 +184,7 @@
 			// 
 			// textBox_comment
 			// 
-			this.textBox_comment.Location = new System.Drawing.Point(107, 709);
+			this.textBox_comment.Location = new System.Drawing.Point(103, 727);
 			this.textBox_comment.Name = "textBox_comment";
 			this.textBox_comment.Size = new System.Drawing.Size(423, 20);
 			this.textBox_comment.TabIndex = 20;
@@ -194,7 +196,7 @@
 			// label_template
 			// 
 			this.label_template.AutoSize = true;
-			this.label_template.Location = new System.Drawing.Point(5, 179);
+			this.label_template.Location = new System.Drawing.Point(1, 197);
 			this.label_template.Name = "label_template";
 			this.label_template.Size = new System.Drawing.Size(43, 13);
 			this.label_template.TabIndex = 22;
@@ -202,7 +204,7 @@
 			// 
 			// textBox_template
 			// 
-			this.textBox_template.Location = new System.Drawing.Point(107, 176);
+			this.textBox_template.Location = new System.Drawing.Point(103, 194);
 			this.textBox_template.Name = "textBox_template";
 			this.textBox_template.Size = new System.Drawing.Size(423, 20);
 			this.textBox_template.TabIndex = 23;
@@ -212,7 +214,7 @@
 			this.checkBox_csv_has_column_titles.AutoSize = true;
 			this.checkBox_csv_has_column_titles.Checked = true;
 			this.checkBox_csv_has_column_titles.CheckState = System.Windows.Forms.CheckState.Checked;
-			this.checkBox_csv_has_column_titles.Location = new System.Drawing.Point(107, 36);
+			this.checkBox_csv_has_column_titles.Location = new System.Drawing.Point(103, 54);
 			this.checkBox_csv_has_column_titles.Name = "checkBox_csv_has_column_titles";
 			this.checkBox_csv_has_column_titles.Size = new System.Drawing.Size(165, 17);
 			this.checkBox_csv_has_column_titles.TabIndex = 24;
@@ -223,20 +225,10 @@
 			// treeView_columns
 			// 
 			this.treeView_columns.CheckBoxes = true;
-			this.treeView_columns.Location = new System.Drawing.Point(107, 62);
+			this.treeView_columns.Location = new System.Drawing.Point(103, 80);
 			this.treeView_columns.Name = "treeView_columns";
 			this.treeView_columns.Size = new System.Drawing.Size(423, 108);
 			this.treeView_columns.TabIndex = 25;
-			// 
-			// button_help
-			// 
-			this.button_help.Location = new System.Drawing.Point(576, 57);
-			this.button_help.Name = "button_help";
-			this.button_help.Size = new System.Drawing.Size(75, 23);
-			this.button_help.TabIndex = 26;
-			this.button_help.Text = "Hilfe";
-			this.button_help.UseVisualStyleBackColor = true;
-			this.button_help.Click += new System.EventHandler(this.OnButtonHelpClick);
 			// 
 			// button_editor_italic
 			// 
@@ -299,7 +291,7 @@
 			this.groupBox_editor_headings.Controls.Add(this.button_editor_heading4);
 			this.groupBox_editor_headings.Controls.Add(this.button_editor_heading3);
 			this.groupBox_editor_headings.Controls.Add(this.button_editor_heading2);
-			this.groupBox_editor_headings.Location = new System.Drawing.Point(539, 306);
+			this.groupBox_editor_headings.Location = new System.Drawing.Point(535, 324);
 			this.groupBox_editor_headings.Name = "groupBox_editor_headings";
 			this.groupBox_editor_headings.Size = new System.Drawing.Size(112, 53);
 			this.groupBox_editor_headings.TabIndex = 32;
@@ -373,7 +365,7 @@
 			this.groupBox_editor_styles.Controls.Add(this.button_editor_italic);
 			this.groupBox_editor_styles.Controls.Add(this.button_editor_italic_bold);
 			this.groupBox_editor_styles.Controls.Add(this.button_editor_strike);
-			this.groupBox_editor_styles.Location = new System.Drawing.Point(539, 230);
+			this.groupBox_editor_styles.Location = new System.Drawing.Point(535, 248);
 			this.groupBox_editor_styles.Name = "groupBox_editor_styles";
 			this.groupBox_editor_styles.Size = new System.Drawing.Size(112, 71);
 			this.groupBox_editor_styles.TabIndex = 34;
@@ -396,7 +388,7 @@
 			this.groupBox_editor_diverse.Controls.Add(this.button_editor_code);
 			this.groupBox_editor_diverse.Controls.Add(this.button_editor_nowiki);
 			this.groupBox_editor_diverse.Controls.Add(this.button_editor_link);
-			this.groupBox_editor_diverse.Location = new System.Drawing.Point(539, 363);
+			this.groupBox_editor_diverse.Location = new System.Drawing.Point(535, 381);
 			this.groupBox_editor_diverse.Name = "groupBox_editor_diverse";
 			this.groupBox_editor_diverse.Size = new System.Drawing.Size(112, 78);
 			this.groupBox_editor_diverse.TabIndex = 35;
@@ -431,7 +423,7 @@
 			this.groupBox_editor_lists.Controls.Add(this.label_editor_lists_numbered);
 			this.groupBox_editor_lists.Controls.Add(this.button_editor_lists_numbered_right);
 			this.groupBox_editor_lists.Controls.Add(this.button_editor_lists_numbered_left);
-			this.groupBox_editor_lists.Location = new System.Drawing.Point(539, 448);
+			this.groupBox_editor_lists.Location = new System.Drawing.Point(535, 466);
 			this.groupBox_editor_lists.Name = "groupBox_editor_lists";
 			this.groupBox_editor_lists.Size = new System.Drawing.Size(112, 79);
 			this.groupBox_editor_lists.TabIndex = 36;
@@ -499,7 +491,7 @@
 			// label_categories
 			// 
 			this.label_categories.AutoSize = true;
-			this.label_categories.Location = new System.Drawing.Point(8, 587);
+			this.label_categories.Location = new System.Drawing.Point(4, 605);
 			this.label_categories.Name = "label_categories";
 			this.label_categories.Size = new System.Drawing.Size(58, 13);
 			this.label_categories.TabIndex = 38;
@@ -508,7 +500,7 @@
 			// treeView_categories
 			// 
 			this.treeView_categories.CheckBoxes = true;
-			this.treeView_categories.Location = new System.Drawing.Point(107, 587);
+			this.treeView_categories.Location = new System.Drawing.Point(103, 605);
 			this.treeView_categories.Name = "treeView_categories";
 			this.treeView_categories.Size = new System.Drawing.Size(423, 116);
 			this.treeView_categories.TabIndex = 39;
@@ -516,7 +508,7 @@
 			// groupBox_editor_categories
 			// 
 			this.groupBox_editor_categories.Controls.Add(this.button_editor_category_add);
-			this.groupBox_editor_categories.Location = new System.Drawing.Point(539, 534);
+			this.groupBox_editor_categories.Location = new System.Drawing.Point(535, 552);
 			this.groupBox_editor_categories.Name = "groupBox_editor_categories";
 			this.groupBox_editor_categories.Size = new System.Drawing.Size(109, 44);
 			this.groupBox_editor_categories.TabIndex = 40;
@@ -536,7 +528,7 @@
 			// checkBox_compact
 			// 
 			this.checkBox_compact.AutoSize = true;
-			this.checkBox_compact.Location = new System.Drawing.Point(279, 36);
+			this.checkBox_compact.Location = new System.Drawing.Point(275, 54);
 			this.checkBox_compact.Name = "checkBox_compact";
 			this.checkBox_compact.Size = new System.Drawing.Size(252, 17);
 			this.checkBox_compact.TabIndex = 41;
@@ -544,11 +536,30 @@
 			this.checkBox_compact.UseVisualStyleBackColor = true;
 			this.checkBox_compact.CheckedChanged += new System.EventHandler(this.OnCheckBoxCompactCheckedChanged);
 			// 
+			// menuStrip
+			// 
+			this.menuStrip.BackColor = System.Drawing.SystemColors.ControlLight;
+			this.menuStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.ToolStripMenuItem_help});
+			this.menuStrip.Location = new System.Drawing.Point(0, 0);
+			this.menuStrip.Name = "menuStrip";
+			this.menuStrip.Size = new System.Drawing.Size(660, 24);
+			this.menuStrip.TabIndex = 42;
+			this.menuStrip.Text = "menuStrip1";
+			// 
+			// ToolStripMenuItem_help
+			// 
+			this.ToolStripMenuItem_help.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
+			this.ToolStripMenuItem_help.Name = "ToolStripMenuItem_help";
+			this.ToolStripMenuItem_help.Size = new System.Drawing.Size(44, 20);
+			this.ToolStripMenuItem_help.Text = "Hilfe";
+			this.ToolStripMenuItem_help.Click += new System.EventHandler(this.OnToolStripMenuItemHelpClick);
+			// 
 			// MainForm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-			this.ClientSize = new System.Drawing.Size(660, 737);
+			this.ClientSize = new System.Drawing.Size(660, 767);
 			this.Controls.Add(this.checkBox_compact);
 			this.Controls.Add(this.groupBox_editor_categories);
 			this.Controls.Add(this.treeView_categories);
@@ -557,7 +568,6 @@
 			this.Controls.Add(this.groupBox_editor_diverse);
 			this.Controls.Add(this.groupBox_editor_styles);
 			this.Controls.Add(this.groupBox_editor_headings);
-			this.Controls.Add(this.button_help);
 			this.Controls.Add(this.treeView_columns);
 			this.Controls.Add(this.checkBox_csv_has_column_titles);
 			this.Controls.Add(this.textBox_template);
@@ -573,7 +583,9 @@
 			this.Controls.Add(this.textBox_pagetitle);
 			this.Controls.Add(this.label_pagetext);
 			this.Controls.Add(this.richTextBox_pagetext);
+			this.Controls.Add(this.menuStrip);
 			this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
+			this.MainMenuStrip = this.menuStrip;
 			this.Name = "MainForm";
 			this.Text = "Docusnap2Wiki";
 			this.Load += new System.EventHandler(this.OnMainFormLoad);
@@ -583,6 +595,8 @@
 			this.groupBox_editor_lists.ResumeLayout(false);
 			this.groupBox_editor_lists.PerformLayout();
 			this.groupBox_editor_categories.ResumeLayout(false);
+			this.menuStrip.ResumeLayout(false);
+			this.menuStrip.PerformLayout();
 			this.ResumeLayout(false);
 			this.PerformLayout();
 
@@ -607,7 +621,6 @@
 		private System.Windows.Forms.CheckBox checkBox_csv_has_column_titles;
 		private System.Windows.Forms.TreeView treeView_columns;
 		private System.Windows.Forms.HelpProvider helpProvider;
-		private System.Windows.Forms.Button button_help;
 		private System.Windows.Forms.Button button_editor_italic;
 		private System.Windows.Forms.Button button_editor_bold;
 		private System.Windows.Forms.Button button_editor_italic_bold;
@@ -637,6 +650,8 @@
 		private System.Windows.Forms.GroupBox groupBox_editor_categories;
 		private System.Windows.Forms.Button button_editor_category_add;
 		private System.Windows.Forms.CheckBox checkBox_compact;
+		private System.Windows.Forms.MenuStrip menuStrip;
+		private System.Windows.Forms.ToolStripMenuItem ToolStripMenuItem_help;
 	}
 }
 

@@ -552,7 +552,7 @@ namespace Docusnap2Wiki
 			}
 		}
 
-		private void OnButtonHelpClick(object sender, EventArgs e)
+		private void DisplayHelp()
 		{
 			System.Windows.Forms.Help.ShowHelp(this, System.IO.Path.Combine(Application.StartupPath, "helpfile.txt"));
 		}
@@ -912,6 +912,11 @@ namespace Docusnap2Wiki
 					++i;
 				}
 			}
+		}
+
+		private void OnToolStripMenuItemHelpClick(object sender, EventArgs e)
+		{
+			OnButtonHelpClick
 		}
 	}
 
