@@ -916,7 +916,34 @@ namespace Docusnap2Wiki
 
 		private void OnToolStripMenuItemHelpClick(object sender, EventArgs e)
 		{
-			OnButtonHelpClick
+			DisplayHelp();
+		}
+
+		private void OnToolStripMenuItemPagetextCutClick(object sender, EventArgs e)
+		{
+			string txt = this.richTextBox_pagetext.Text;
+			int selection_begin = this.richTextBox_pagetext.SelectionStart;
+			int selection_len = this.richTextBox_pagetext.SelectionLength;
+			System.Windows.Forms.Clipboard.SetText(this.richTextBox_pagetext.SelectedText);
+			this.richTextBox_pagetext.Text = txt.Substring(0, selection_begin) 
+				+ txt.Substring(selection_begin + selection_len);
+			this.richTextBox_pagetext.SelectionStart = selection_begin;
+		}
+
+		private void OnToolStripMenuItemPagetextCopyClick(object sender, EventArgs e)
+		{
+			System.Windows.Forms.Clipboard.SetText(this.richTextBox_pagetext.SelectedText);
+		}
+
+		private void OnToolStripMenuItemPagetextPasteClick(object sender, EventArgs e)
+		{
+			string txt = this.richTextBox_pagetext.Text;
+			int selection_begin = this.richTextBox_pagetext.SelectionStart;
+			int selection_len = this.richTextBox_pagetext.SelectionLength;
+			this.richTextBox_pagetext.Text = txt.Substring(0, selection_begin)
+				+ System.Windows.Forms.Clipboard.GetText()
+				+ txt.Substring(selection_begin + selection_len);
+			this.richTextBox_pagetext.SelectionStart = selection_begin;
 		}
 	}
 
