@@ -78,17 +78,23 @@
 			this.checkBox_compact = new System.Windows.Forms.CheckBox();
 			this.menuStrip = new System.Windows.Forms.MenuStrip();
 			this.ToolStripMenuItem_help = new System.Windows.Forms.ToolStripMenuItem();
+			this.contextMenuStrip_pagetext = new System.Windows.Forms.ContextMenuStrip(this.components);
+			this.toolStripMenuItem_pagetext_cut = new System.Windows.Forms.ToolStripMenuItem();
+			this.toolStripMenuItem_pagetext_copy = new System.Windows.Forms.ToolStripMenuItem();
+			this.toolStripMenuItem_pagetext_paste = new System.Windows.Forms.ToolStripMenuItem();
 			this.groupBox_editor_headings.SuspendLayout();
 			this.groupBox_editor_styles.SuspendLayout();
 			this.groupBox_editor_diverse.SuspendLayout();
 			this.groupBox_editor_lists.SuspendLayout();
 			this.groupBox_editor_categories.SuspendLayout();
 			this.menuStrip.SuspendLayout();
+			this.contextMenuStrip_pagetext.SuspendLayout();
 			this.SuspendLayout();
 			// 
 			// richTextBox_pagetext
 			// 
 			this.richTextBox_pagetext.Anchor = System.Windows.Forms.AnchorStyles.Top;
+			this.richTextBox_pagetext.ContextMenuStrip = this.contextMenuStrip_pagetext;
 			this.richTextBox_pagetext.Location = new System.Drawing.Point(103, 248);
 			this.richTextBox_pagetext.Name = "richTextBox_pagetext";
 			this.richTextBox_pagetext.Size = new System.Drawing.Size(425, 348);
@@ -555,6 +561,36 @@
 			this.ToolStripMenuItem_help.Text = "Hilfe";
 			this.ToolStripMenuItem_help.Click += new System.EventHandler(this.OnToolStripMenuItemHelpClick);
 			// 
+			// contextMenuStrip_pagetext
+			// 
+			this.contextMenuStrip_pagetext.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.toolStripMenuItem_pagetext_cut,
+            this.toolStripMenuItem_pagetext_copy,
+            this.toolStripMenuItem_pagetext_paste});
+			this.contextMenuStrip_pagetext.Name = "contextMenuStrip_pagetext";
+			this.contextMenuStrip_pagetext.Size = new System.Drawing.Size(149, 70);
+			// 
+			// toolStripMenuItem_pagetext_cut
+			// 
+			this.toolStripMenuItem_pagetext_cut.Name = "toolStripMenuItem_pagetext_cut";
+			this.toolStripMenuItem_pagetext_cut.Size = new System.Drawing.Size(148, 22);
+			this.toolStripMenuItem_pagetext_cut.Text = "Ausschneiden";
+			this.toolStripMenuItem_pagetext_cut.Click += new System.EventHandler(this.OnToolStripMenuItemPagetextCutClick);
+			// 
+			// toolStripMenuItem_pagetext_copy
+			// 
+			this.toolStripMenuItem_pagetext_copy.Name = "toolStripMenuItem_pagetext_copy";
+			this.toolStripMenuItem_pagetext_copy.Size = new System.Drawing.Size(148, 22);
+			this.toolStripMenuItem_pagetext_copy.Text = "Kopieren";
+			this.toolStripMenuItem_pagetext_copy.Click += new System.EventHandler(this.OnToolStripMenuItemPagetextCopyClick);
+			// 
+			// toolStripMenuItem_pagetext_paste
+			// 
+			this.toolStripMenuItem_pagetext_paste.Name = "toolStripMenuItem_pagetext_paste";
+			this.toolStripMenuItem_pagetext_paste.Size = new System.Drawing.Size(148, 22);
+			this.toolStripMenuItem_pagetext_paste.Text = "Einfügen";
+			this.toolStripMenuItem_pagetext_paste.Click += new System.EventHandler(this.OnToolStripMenuItemPagetextPasteClick);
+			// 
 			// MainForm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -597,6 +633,7 @@
 			this.groupBox_editor_categories.ResumeLayout(false);
 			this.menuStrip.ResumeLayout(false);
 			this.menuStrip.PerformLayout();
+			this.contextMenuStrip_pagetext.ResumeLayout(false);
 			this.ResumeLayout(false);
 			this.PerformLayout();
 
@@ -652,6 +689,10 @@
 		private System.Windows.Forms.CheckBox checkBox_compact;
 		private System.Windows.Forms.MenuStrip menuStrip;
 		private System.Windows.Forms.ToolStripMenuItem ToolStripMenuItem_help;
+		private System.Windows.Forms.ContextMenuStrip contextMenuStrip_pagetext;
+		private System.Windows.Forms.ToolStripMenuItem toolStripMenuItem_pagetext_cut;
+		private System.Windows.Forms.ToolStripMenuItem toolStripMenuItem_pagetext_copy;
+		private System.Windows.Forms.ToolStripMenuItem toolStripMenuItem_pagetext_paste;
 	}
 }
 
