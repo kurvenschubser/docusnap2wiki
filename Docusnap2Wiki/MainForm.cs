@@ -282,20 +282,25 @@ namespace Docusnap2Wiki
 		{
 			Cursor.Current = Cursors.WaitCursor;
 
-			System.Text.RegularExpressions.Match m = RE_CATEGORY.Match(this.richTextBox_pagetext.Text);
-			if (!m.Success)
+			Page p = null;
+			DialogResult answer = DialogResult.Retry;		// default value corresponding to 'null'
+
+			if (!RE_CATEGORY.Match(this.richTextBox_pagetext.Text).Success)
 			{
-				DialogResult answer = MessageBox.Show("Die Seite ist keiner Kategorie ([[Kategoriename]]) zugeordnet. Wollen Sie dennoch fortfahren?"
-					, "Fehlende Kategorie", MessageBoxButtons.YesNo);
+				answer = MessageBox.Show("Die Seite ist keiner Kategorie "
+					+ "([[Kategoriename]]) zugeordnet. Wollen Sie dennoch fortfahren?"
+					, "Fehlende Kategorie"
+					, MessageBoxButtons.YesNo);
+
 				if (answer == System.Windows.Forms.DialogResult.No)
 				{
 					return;
 				}
 			}
-
+			
 			if (this.Rows.Count == 0)
 			{
-				DialogResult answer = MessageBox.Show("Es ist keine CSV Datei geladen. Wollen Sie die Seite so, wie sie ist, erstellen?", 
+				answer = MessageBox.Show("Es ist keine CSV Datei geladen. Wollen Sie die Seite so, wie sie ist, erstellen?", 
 					"Keine Kontext-Informationen", MessageBoxButtons.YesNo);
 				if (answer == System.Windows.Forms.DialogResult.Yes)
 				{
@@ -306,11 +311,11 @@ namespace Docusnap2Wiki
 						MessageBox.Show("Es muss ein Seitentitel angegeben werden.", "Leerer Seitentitel");
 						return;
 					}
-					Page p = new Page(this.Site, pagetitle);
+					p = new Page(this.Site, pagetitle);
 					p.Load();
 					if (!p.IsEmpty())
 					{
-						if (MessageBox.Show("Die Seite gibt es bereits. Wollen Sie sie überschreiben?", "Existierende Seite", MessageBoxButtons.YesNoCancel) == System.Windows.Forms.DialogResult.No)
+						if (MessageBox.Show("Die Seite gibt es bereits. Wollen Sie sie überschreiben?", "Existierende Seite", MessageBoxButtons.YesNo) == System.Windows.Forms.DialogResult.No)
 						{
 							return;
 						}
@@ -326,7 +331,26 @@ namespace Docusnap2Wiki
 			}
 
 			List<Tuple<GenerationState, string, string>> generated_contents = new List<Tuple<GenerationState, string, string>>();
-			
+			MessageBoxPermaChoice msgbox = new MessageBoxPermaChoice(
+				title: "Existierende Seite"
+				, button_defs: new ButtonDef[] 
+					{   new ButtonDef {   Answer = DialogResult.Cancel
+						                , Button = new Button { Text = "Abbruch", AutoSize = true }
+										, Callbacks = new Func<Form, Button, bool>[]{}
+										, Index = 0  } 
+					  , new ButtonDef {   Answer = DialogResult.No
+						                , Button = new Button { Text = "Nicht überschreiben", AutoSize = true }
+										, Callbacks = new Func<Form, Button, bool>[]{}
+										, Index = 1  }
+					  , new ButtonDef {   Answer = DialogResult.Yes
+						                , Button = new Button { Text = "Überschreiben", AutoSize = true }
+										, Callbacks = new Func<Form, Button, bool>[]{}
+										, Index = 2  } }
+			);
+
+			bool is_permanent = false;
+			msgbox.Choice += (s, args) => { is_permanent = args.IsPermanent; answer = args.Answer; };
+
 			int current_row_no = 1;
 			foreach (string[] row in this.Rows)
 			{
@@ -334,8 +358,7 @@ namespace Docusnap2Wiki
 				string pagetext = this.FormatWithContext(this.richTextBox_pagetext.Text, context, current_row_no, this.Rows.Count);
 				string pagetitle = this.FormatWithContext(this.textBox_pagetitle.Text, context, current_row_no, this.Rows.Count);
 				GenerationState write_status = GenerationState.New;
-				Page p = null;
-
+				
 				if (string.IsNullOrEmpty(pagetitle))
 				{
 					MessageBox.Show("Zeile " + current_row_no.ToString() + ": Der Seitentitel ist leer. Die Seite kann nicht angelegt werden.", "Leerer Seitentitel");
@@ -347,12 +370,11 @@ namespace Docusnap2Wiki
 					p.Load();
 					if (!p.IsEmpty())
 					{
-						DialogResult answer = MessageBox.Show(
-							string.Format("Die Seite {0} gibt es bereits. Wollen Sie sie überschreiben?", pagetitle)
-							, "Existierende Seite"
-							, MessageBoxButtons.YesNoCancel
-						);
-
+						if (!is_permanent)
+						{
+							msgbox.Message = string.Format("Die Seite {0} gibt es bereits. Wollen Sie sie überschreiben?", pagetitle);
+							msgbox.ShowDialog();
+						}
 						if (answer == DialogResult.No)
 						{
 							write_status = GenerationState.None;
@@ -361,6 +383,14 @@ namespace Docusnap2Wiki
 						{
 							write_status = GenerationState.Overwrite;
 						}
+						else if (answer == DialogResult.Cancel || answer == DialogResult.Abort)
+						{
+							return;
+						}
+					}
+					else
+					{
+						msgbox.Hide();
 					}
 				}
 
@@ -370,14 +400,20 @@ namespace Docusnap2Wiki
 					, pagetext
 				);
 
-				if (write_status != GenerationState.None)
-				{
-					p.text = pagetext;
-					p.Save(this.textBox_comment.Text, false);
-				}
 				generated_contents.Add(tup);
 
 				current_row_no++;
+			}
+
+			foreach (Tuple<GenerationState, string, string> tup in generated_contents)
+			{
+				if (tup.Item1 != GenerationState.None)
+				{
+					p = new Page(this.Site, tup.Item2);
+					p.Load();
+					p.text = tup.Item3;
+					p.Save(this.textBox_comment.Text, false);
+				}
 			}
 
 			Cursor.Current = Cursors.Default;
@@ -386,7 +422,7 @@ namespace Docusnap2Wiki
 			string[] gen_state_desc = new string[] {"Ignoriert", "Neu", "Überschrieben"};
 
 			new MessageBoxWithDetails(
-				"Zusammenfassung"
+				  "Zusammenfassung"
 				, string.Format("Neue Seiten: {0}." + Environment.NewLine 
 								+ "Überschriebene Seiten: {1}" + Environment.NewLine 
 								+ "Ignorierte Einträge: {2}"
@@ -396,7 +432,7 @@ namespace Docusnap2Wiki
 								, generated_contents.Count(o => o.Item1 == GenerationState.None)
 								, generated_contents.Count())
 				, string.Join(
-					System.Environment.NewLine
+					  Environment.NewLine
 					, generated_contents.Select(
 						o => string.Format(
 							"{0}: {1}"

@@ -21,7 +21,9 @@ namespace Docusnap2Wiki
 			InitializeComponent();
 
 			this.Text = title;
-			this.textBox_details.Lines = details.Split(System.Environment.NewLine.ToArray());
+			this.textBox_details.Lines = details.Split(
+				  new string[]{System.Environment.NewLine}
+				, StringSplitOptions.RemoveEmptyEntries);
 			this.textBox_msg.Text = msg;
 		}
 
