@@ -70,19 +70,19 @@
 			// 
 			// textBox_msg
 			// 
-			this.textBox_msg.Enabled = false;
 			this.textBox_msg.Location = new System.Drawing.Point(13, 13);
 			this.textBox_msg.Multiline = true;
 			this.textBox_msg.Name = "textBox_msg";
+			this.textBox_msg.ReadOnly = true;
 			this.textBox_msg.Size = new System.Drawing.Size(410, 102);
 			this.textBox_msg.TabIndex = 0;
 			// 
 			// textBox_details
 			// 
-			this.textBox_details.Enabled = false;
 			this.textBox_details.Location = new System.Drawing.Point(13, 15);
 			this.textBox_details.Multiline = true;
 			this.textBox_details.Name = "textBox_details";
+			this.textBox_details.ReadOnly = true;
 			this.textBox_details.Size = new System.Drawing.Size(410, 142);
 			this.textBox_details.TabIndex = 2;
 			// 

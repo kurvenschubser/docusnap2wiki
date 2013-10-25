@@ -17,17 +17,26 @@ namespace Docusnap2Wiki
 	using DotNetWikiBot;
 
 
+	public enum GenerationState
+	{
+		None = 0,
+		New = 1,
+		Overwrite = 2
+	}
+
+
 	public partial class MainForm : Form
 	{
 		List<string[]> rows;
 		string[] categories;
+		AutoCompleteStringCollection autocomplete_templates;
 
 		Regex RE_CATEGORY = new Regex(@"\[\[Kategorie:.*\]\]");
 		Regex RE_FORLOOP = new Regex(
-			@".*?(?<loop_begin>[{]{1})\s*for"
-				+ "(?<loop_var>[a-zA-Z_]+[a-zA-Z0-9]*) in "
-				+ "(?<loop_iterable>[a-zA-Z_]+[a-zA-Z0-9]*)}(?<loop_body>.*)"
-				+ "(?<loop_end>{endfor}).*"
+			@".*?(?<loop_begin>[{])\s?for\s?"
+				+ @"(?<loop_var>[a-zA-Z_]+[a-zA-Z0-9]*) in "
+				+ @"(?<loop_iterable>[a-zA-Z_]+[a-zA-Z0-9]*)\s?}(?<loop_body>.*)"
+				+ @"(?<loop_end>{\s?endfor\s?}).*"
 			, RegexOptions.Singleline);
 
 		public MainForm()
@@ -37,7 +46,7 @@ namespace Docusnap2Wiki
 			this.textBox_pagetitle.TextChanged += new EventHandler(OnPageTitleTextChanged);
 			this.textBox_template.KeyUp += new KeyEventHandler(OnTextboxTemplateKeyUp);
 			this.textBox_template.LostFocus += new EventHandler(OnTextboxTemplateLostFocus);
-
+			
 			this.treeView_categories.AfterCheck += new TreeViewEventHandler(OnTreeViewCategoriesAfterCheck);
 
 			//this.richTextBox_pagetext.ModifiedChanged += new EventHandler(OnRichTextBoxPagetextModifiedChanged);
@@ -247,9 +256,12 @@ namespace Docusnap2Wiki
 		{
 			this.treeView_columns.BeginUpdate();
 			this.treeView_columns.Nodes.Clear();
+			TreeNode n = null;
 			foreach (string colname in colnames)
 			{
-				this.treeView_columns.Nodes.Add(colname);
+				n = new TreeNode(colname);
+				n.Checked = true;
+				this.treeView_columns.Nodes.Add(n);
 			}
 			this.treeView_columns.EndUpdate();
 		}
@@ -266,7 +278,7 @@ namespace Docusnap2Wiki
 			}
 		}
 
-		private void OnUploadClick(object sender, EventArgs e)
+		private void OnButtonUploadClick(object sender, EventArgs e)
 		{
 			Cursor.Current = Cursors.WaitCursor;
 
@@ -298,7 +310,7 @@ namespace Docusnap2Wiki
 					p.Load();
 					if (!p.IsEmpty())
 					{
-						if (MessageBox.Show("Die Seite gibt es bereits. Wollen Sie sie überschreiben?", "Existierende Seite", MessageBoxButtons.YesNo) == System.Windows.Forms.DialogResult.No)
+						if (MessageBox.Show("Die Seite gibt es bereits. Wollen Sie sie überschreiben?", "Existierende Seite", MessageBoxButtons.YesNoCancel) == System.Windows.Forms.DialogResult.No)
 						{
 							return;
 						}
@@ -313,7 +325,7 @@ namespace Docusnap2Wiki
 				}
 			}
 
-			List<Tuple<bool, string, string>> generated_contents = new List<Tuple<bool, string, string>>();
+			List<Tuple<GenerationState, string, string>> generated_contents = new List<Tuple<GenerationState, string, string>>();
 			
 			int current_row_no = 1;
 			foreach (string[] row in this.Rows)
@@ -321,7 +333,7 @@ namespace Docusnap2Wiki
 				Dictionary<string, object> context = this.MakeContext(row);
 				string pagetext = this.FormatWithContext(this.richTextBox_pagetext.Text, context, current_row_no, this.Rows.Count);
 				string pagetitle = this.FormatWithContext(this.textBox_pagetitle.Text, context, current_row_no, this.Rows.Count);
-				bool do_generate = true;
+				GenerationState write_status = GenerationState.New;
 				Page p = null;
 
 				if (string.IsNullOrEmpty(pagetitle))
@@ -338,23 +350,27 @@ namespace Docusnap2Wiki
 						DialogResult answer = MessageBox.Show(
 							string.Format("Die Seite {0} gibt es bereits. Wollen Sie sie überschreiben?", pagetitle)
 							, "Existierende Seite"
-							, MessageBoxButtons.YesNo
+							, MessageBoxButtons.YesNoCancel
 						);
 
-						if (answer == System.Windows.Forms.DialogResult.No)
+						if (answer == DialogResult.No)
 						{
-							do_generate = false;
+							write_status = GenerationState.None;
+						}
+						else if (answer == DialogResult.Yes)
+						{
+							write_status = GenerationState.Overwrite;
 						}
 					}
 				}
 
-				Tuple<bool, string, string> tup = new Tuple<bool, string, string>(
-					do_generate
+				Tuple<GenerationState, string, string> tup = new Tuple<GenerationState, string, string>(
+					write_status
 					, pagetitle
 					, pagetext
 				);
 
-				if (do_generate)
+				if (write_status != GenerationState.None)
 				{
 					p.text = pagetext;
 					p.Save(this.textBox_comment.Text, false);
@@ -366,19 +382,26 @@ namespace Docusnap2Wiki
 
 			Cursor.Current = Cursors.Default;
 
-			int generated_pages = generated_contents.Count(o => o.Item1);
+			string siteurl = System.IO.Path.Combine(Site.site, Site.indexPath);
+			string[] gen_state_desc = new string[] {"Ignoriert", "Neu", "Überschrieben"};
+
 			new MessageBoxWithDetails(
 				"Zusammenfassung"
-				, generated_pages > 0 
-					? string.Format("{0} von {1} Einträgen angelegt.", generated_pages, generated_contents.Count) 
-					: "Keine Einträge angelegt."
+				, string.Format("Neue Seiten: {0}." + Environment.NewLine 
+								+ "Überschriebene Seiten: {1}" + Environment.NewLine 
+								+ "Ignorierte Einträge: {2}"
+								+ "Einträge insgesamt: {3}"
+								, generated_contents.Count(o => o.Item1 == GenerationState.New)
+								, generated_contents.Count(o => o.Item1 == GenerationState.Overwrite)
+								, generated_contents.Count(o => o.Item1 == GenerationState.None)
+								, generated_contents.Count())
 				, string.Join(
 					System.Environment.NewLine
 					, generated_contents.Select(
 						o => string.Format(
 							"{0}: {1}"
-							, (o.Item1 ? "Angelegt" : "Nicht angelegt")
-							, o.Item2
+							, gen_state_desc[(int)o.Item1]
+							, System.IO.Path.Combine(siteurl, o.Item2)
 						)
 					).ToArray()
 				)
@@ -456,7 +479,17 @@ namespace Docusnap2Wiki
 
 		private void OnMainFormLoad(object sender, EventArgs e)
 		{
+			this.SetupTemplates();
 			this.SetupCategories();
+		}
+
+		private void SetupTemplates()
+		{
+			this.autocomplete_templates = new AutoCompleteStringCollection();
+			this.textBox_template.AutoCompleteSource = AutoCompleteSource.CustomSource;
+			this.autocomplete_templates.AddRange(this.GetAllTemplates());
+			this.textBox_template.AutoCompleteCustomSource = this.autocomplete_templates;
+			this.textBox_template.AutoCompleteMode = AutoCompleteMode.SuggestAppend;
 		}
 
 		private Site site;
@@ -772,6 +805,25 @@ namespace Docusnap2Wiki
 			return cats.ToArray();
 		}
 
+		private string[] GetAllTemplates()
+		{
+			List<string> templates = new List<string>();
+			string[] bits = { Site.site, Site.indexPath, 
+								"api.php?action=query&format=xml&list=allpages&aplimit=5000&apnamespace=10" };
+			string url = string.Join("", bits);
+			string src = Site.GetPageHTM(url);
+
+			XmlDocument doc = new XmlDocument();
+			doc.LoadXml(src);
+			XmlNodeList nodes = doc.SelectNodes("/api/query/allpages/p");
+			foreach (XmlNode n in nodes)
+			{
+				templates.Add(n.Attributes["title"].InnerText.Trim());
+			}
+
+			return templates.ToArray();
+		}
+
 		public string[] Categories
 		{
 			get
@@ -860,24 +912,20 @@ namespace Docusnap2Wiki
 			IEnumerable<IGrouping<string, string[]>> groupings = 
 				rows.GroupBy(arr => arr[groupby_column]);
 
-			List<List<string>> row = new List<List<string>>();
+			List<HashSet<string>> row = null;
 			foreach(IGrouping<string, string[]> grouping in groupings)
 			{
+				row = new List<HashSet<string>>();
+				
 				// generate lists for compacting values
 				for(int i = 0; i < n_row_fields; ++i)
 				{
-					// there's only one value in this list
-					if (i == groupby_column)
-					{
-						row.Add(new List<string>(new string[]{grouping.Key}));
-					}
-					else
-					{
-						row.Add(new List<string>());
-					}
+					row.Add(new HashSet<string>());
 				}
-				
 
+				// there's only one value in this list
+				row[groupby_column].Add(grouping.Key);
+					
 				foreach(string[] r in grouping)
 				{
 					int j = 0;
@@ -944,6 +992,24 @@ namespace Docusnap2Wiki
 				+ System.Windows.Forms.Clipboard.GetText()
 				+ txt.Substring(selection_begin + selection_len);
 			this.richTextBox_pagetext.SelectionStart = selection_begin;
+		}
+
+		private void OnButtonShowDataClick(object sender, EventArgs e)
+		{
+			new DataView(this.CSVColumnNames, this.Rows).ShowDialog();
+		}
+
+		public string[] CSVColumnNames
+		{
+			get
+			{
+				List<string> colnames = new List<string>();
+				foreach (TreeNode n in this.treeView_columns.Nodes)
+				{
+					colnames.Add(n.Text);
+				}
+				return colnames.ToArray();
+			}
 		}
 	}
 

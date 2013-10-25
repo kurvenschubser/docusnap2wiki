@@ -31,6 +31,10 @@
 			this.components = new System.ComponentModel.Container();
 			System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainForm));
 			this.richTextBox_pagetext = new System.Windows.Forms.RichTextBox();
+			this.contextMenuStrip_pagetext = new System.Windows.Forms.ContextMenuStrip(this.components);
+			this.toolStripMenuItem_pagetext_cut = new System.Windows.Forms.ToolStripMenuItem();
+			this.toolStripMenuItem_pagetext_copy = new System.Windows.Forms.ToolStripMenuItem();
+			this.toolStripMenuItem_pagetext_paste = new System.Windows.Forms.ToolStripMenuItem();
 			this.label_pagetext = new System.Windows.Forms.Label();
 			this.textBox_pagetitle = new System.Windows.Forms.TextBox();
 			this.label_pagetitle = new System.Windows.Forms.Label();
@@ -60,7 +64,7 @@
 			this.button_editor_heading2 = new System.Windows.Forms.Button();
 			this.button_editor_link = new System.Windows.Forms.Button();
 			this.groupBox_editor_styles = new System.Windows.Forms.GroupBox();
-			this.button1 = new System.Windows.Forms.Button();
+			this.button_editor_underlined = new System.Windows.Forms.Button();
 			this.groupBox_editor_diverse = new System.Windows.Forms.GroupBox();
 			this.button_editor_quote = new System.Windows.Forms.Button();
 			this.button_editor_code = new System.Windows.Forms.Button();
@@ -78,17 +82,15 @@
 			this.checkBox_compact = new System.Windows.Forms.CheckBox();
 			this.menuStrip = new System.Windows.Forms.MenuStrip();
 			this.ToolStripMenuItem_help = new System.Windows.Forms.ToolStripMenuItem();
-			this.contextMenuStrip_pagetext = new System.Windows.Forms.ContextMenuStrip(this.components);
-			this.toolStripMenuItem_pagetext_cut = new System.Windows.Forms.ToolStripMenuItem();
-			this.toolStripMenuItem_pagetext_copy = new System.Windows.Forms.ToolStripMenuItem();
-			this.toolStripMenuItem_pagetext_paste = new System.Windows.Forms.ToolStripMenuItem();
+			this.toolTip = new System.Windows.Forms.ToolTip(this.components);
+			this.button_show_data = new System.Windows.Forms.Button();
+			this.contextMenuStrip_pagetext.SuspendLayout();
 			this.groupBox_editor_headings.SuspendLayout();
 			this.groupBox_editor_styles.SuspendLayout();
 			this.groupBox_editor_diverse.SuspendLayout();
 			this.groupBox_editor_lists.SuspendLayout();
 			this.groupBox_editor_categories.SuspendLayout();
 			this.menuStrip.SuspendLayout();
-			this.contextMenuStrip_pagetext.SuspendLayout();
 			this.SuspendLayout();
 			// 
 			// richTextBox_pagetext
@@ -100,6 +102,36 @@
 			this.richTextBox_pagetext.Size = new System.Drawing.Size(425, 348);
 			this.richTextBox_pagetext.TabIndex = 0;
 			this.richTextBox_pagetext.Text = "";
+			// 
+			// contextMenuStrip_pagetext
+			// 
+			this.contextMenuStrip_pagetext.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.toolStripMenuItem_pagetext_cut,
+            this.toolStripMenuItem_pagetext_copy,
+            this.toolStripMenuItem_pagetext_paste});
+			this.contextMenuStrip_pagetext.Name = "contextMenuStrip_pagetext";
+			this.contextMenuStrip_pagetext.Size = new System.Drawing.Size(149, 70);
+			// 
+			// toolStripMenuItem_pagetext_cut
+			// 
+			this.toolStripMenuItem_pagetext_cut.Name = "toolStripMenuItem_pagetext_cut";
+			this.toolStripMenuItem_pagetext_cut.Size = new System.Drawing.Size(148, 22);
+			this.toolStripMenuItem_pagetext_cut.Text = "Ausschneiden";
+			this.toolStripMenuItem_pagetext_cut.Click += new System.EventHandler(this.OnToolStripMenuItemPagetextCutClick);
+			// 
+			// toolStripMenuItem_pagetext_copy
+			// 
+			this.toolStripMenuItem_pagetext_copy.Name = "toolStripMenuItem_pagetext_copy";
+			this.toolStripMenuItem_pagetext_copy.Size = new System.Drawing.Size(148, 22);
+			this.toolStripMenuItem_pagetext_copy.Text = "Kopieren";
+			this.toolStripMenuItem_pagetext_copy.Click += new System.EventHandler(this.OnToolStripMenuItemPagetextCopyClick);
+			// 
+			// toolStripMenuItem_pagetext_paste
+			// 
+			this.toolStripMenuItem_pagetext_paste.Name = "toolStripMenuItem_pagetext_paste";
+			this.toolStripMenuItem_pagetext_paste.Size = new System.Drawing.Size(148, 22);
+			this.toolStripMenuItem_pagetext_paste.Text = "Einfügen";
+			this.toolStripMenuItem_pagetext_paste.Click += new System.EventHandler(this.OnToolStripMenuItemPagetextPasteClick);
 			// 
 			// label_pagetext
 			// 
@@ -138,7 +170,7 @@
 			this.button_upload.TabIndex = 6;
 			this.button_upload.Text = "Hochladen";
 			this.button_upload.UseVisualStyleBackColor = true;
-			this.button_upload.Click += new System.EventHandler(this.OnUploadClick);
+			this.button_upload.Click += new System.EventHandler(this.OnButtonUploadClick);
 			// 
 			// textBox_input_path
 			// 
@@ -210,6 +242,8 @@
 			// 
 			// textBox_template
 			// 
+			this.textBox_template.AutoCompleteMode = System.Windows.Forms.AutoCompleteMode.SuggestAppend;
+			this.textBox_template.AutoCompleteSource = System.Windows.Forms.AutoCompleteSource.CustomSource;
 			this.textBox_template.Location = new System.Drawing.Point(103, 194);
 			this.textBox_template.Name = "textBox_template";
 			this.textBox_template.Size = new System.Drawing.Size(423, 20);
@@ -244,6 +278,7 @@
 			this.button_editor_italic.Size = new System.Drawing.Size(22, 23);
 			this.button_editor_italic.TabIndex = 27;
 			this.button_editor_italic.Text = "i";
+			this.toolTip.SetToolTip(this.button_editor_italic, "kursiv");
 			this.button_editor_italic.UseVisualStyleBackColor = true;
 			this.button_editor_italic.Click += new System.EventHandler(this.OnEditorButtonItalicClick);
 			// 
@@ -255,6 +290,7 @@
 			this.button_editor_bold.Size = new System.Drawing.Size(26, 23);
 			this.button_editor_bold.TabIndex = 28;
 			this.button_editor_bold.Text = "button1";
+			this.toolTip.SetToolTip(this.button_editor_bold, "fett");
 			this.button_editor_bold.UseVisualStyleBackColor = true;
 			this.button_editor_bold.Click += new System.EventHandler(this.OnButtonEditorBoldClick);
 			// 
@@ -266,6 +302,7 @@
 			this.button_editor_italic_bold.Size = new System.Drawing.Size(25, 23);
 			this.button_editor_italic_bold.TabIndex = 29;
 			this.button_editor_italic_bold.Text = "ib";
+			this.toolTip.SetToolTip(this.button_editor_italic_bold, "kursiv+fett");
 			this.button_editor_italic_bold.UseVisualStyleBackColor = true;
 			this.button_editor_italic_bold.Click += new System.EventHandler(this.OnButtonEditorItalicBoldClick);
 			// 
@@ -277,6 +314,7 @@
 			this.button_editor_strike.Size = new System.Drawing.Size(29, 23);
 			this.button_editor_strike.TabIndex = 30;
 			this.button_editor_strike.Text = "gL";
+			this.toolTip.SetToolTip(this.button_editor_strike, "durchgestrichen");
 			this.button_editor_strike.UseVisualStyleBackColor = true;
 			this.button_editor_strike.Click += new System.EventHandler(this.OnButtonEditorStrikeClick);
 			// 
@@ -311,6 +349,7 @@
 			this.button_editor_heading6.Size = new System.Drawing.Size(18, 23);
 			this.button_editor_heading6.TabIndex = 4;
 			this.button_editor_heading6.Text = "6";
+			this.toolTip.SetToolTip(this.button_editor_heading6, "h6-Überschrift");
 			this.button_editor_heading6.UseVisualStyleBackColor = true;
 			this.button_editor_heading6.Click += new System.EventHandler(this.OnButtonEditorHeading6Click);
 			// 
@@ -321,6 +360,7 @@
 			this.button_editor_heading5.Size = new System.Drawing.Size(18, 23);
 			this.button_editor_heading5.TabIndex = 3;
 			this.button_editor_heading5.Text = "5";
+			this.toolTip.SetToolTip(this.button_editor_heading5, "h5-Überschrift");
 			this.button_editor_heading5.UseVisualStyleBackColor = true;
 			this.button_editor_heading5.Click += new System.EventHandler(this.OnButtonEditorHeading5Click);
 			// 
@@ -331,6 +371,7 @@
 			this.button_editor_heading4.Size = new System.Drawing.Size(18, 23);
 			this.button_editor_heading4.TabIndex = 2;
 			this.button_editor_heading4.Text = "4";
+			this.toolTip.SetToolTip(this.button_editor_heading4, "h4-Überschrift");
 			this.button_editor_heading4.UseVisualStyleBackColor = true;
 			this.button_editor_heading4.Click += new System.EventHandler(this.OnButtonEditorHeading4Click);
 			// 
@@ -341,6 +382,7 @@
 			this.button_editor_heading3.Size = new System.Drawing.Size(18, 23);
 			this.button_editor_heading3.TabIndex = 1;
 			this.button_editor_heading3.Text = "3";
+			this.toolTip.SetToolTip(this.button_editor_heading3, "h3-Überschrift");
 			this.button_editor_heading3.UseVisualStyleBackColor = true;
 			this.button_editor_heading3.Click += new System.EventHandler(this.OnButtonEditorHeading3Click);
 			// 
@@ -351,6 +393,7 @@
 			this.button_editor_heading2.Size = new System.Drawing.Size(18, 23);
 			this.button_editor_heading2.TabIndex = 0;
 			this.button_editor_heading2.Text = "2";
+			this.toolTip.SetToolTip(this.button_editor_heading2, "h2-Überschrift");
 			this.button_editor_heading2.UseVisualStyleBackColor = true;
 			this.button_editor_heading2.Click += new System.EventHandler(this.OnButtonEditorHeading2Click);
 			// 
@@ -366,7 +409,7 @@
 			// 
 			// groupBox_editor_styles
 			// 
-			this.groupBox_editor_styles.Controls.Add(this.button1);
+			this.groupBox_editor_styles.Controls.Add(this.button_editor_underlined);
 			this.groupBox_editor_styles.Controls.Add(this.button_editor_bold);
 			this.groupBox_editor_styles.Controls.Add(this.button_editor_italic);
 			this.groupBox_editor_styles.Controls.Add(this.button_editor_italic_bold);
@@ -378,15 +421,16 @@
 			this.groupBox_editor_styles.TabStop = false;
 			this.groupBox_editor_styles.Text = "Stile";
 			// 
-			// button1
+			// button_editor_underlined
 			// 
-			this.button1.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Underline, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-			this.button1.Location = new System.Drawing.Point(42, 41);
-			this.button1.Name = "button1";
-			this.button1.Size = new System.Drawing.Size(27, 23);
-			this.button1.TabIndex = 31;
-			this.button1.Text = "gL";
-			this.button1.UseVisualStyleBackColor = true;
+			this.button_editor_underlined.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Underline, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+			this.button_editor_underlined.Location = new System.Drawing.Point(42, 41);
+			this.button_editor_underlined.Name = "button_editor_underlined";
+			this.button_editor_underlined.Size = new System.Drawing.Size(27, 23);
+			this.button_editor_underlined.TabIndex = 31;
+			this.button_editor_underlined.Text = "gL";
+			this.toolTip.SetToolTip(this.button_editor_underlined, "unterstrichen");
+			this.button_editor_underlined.UseVisualStyleBackColor = true;
 			// 
 			// groupBox_editor_diverse
 			// 
@@ -443,6 +487,7 @@
 			this.button_editor_lists_bullets_right.Size = new System.Drawing.Size(22, 23);
 			this.button_editor_lists_bullets_right.TabIndex = 5;
 			this.button_editor_lists_bullets_right.Text = ">";
+			this.toolTip.SetToolTip(this.button_editor_lists_bullets_right, "Einrückung ERW");
 			this.button_editor_lists_bullets_right.UseVisualStyleBackColor = true;
 			this.button_editor_lists_bullets_right.Click += new System.EventHandler(this.OnButtonEditorListsBulletsRightClick);
 			// 
@@ -453,6 +498,7 @@
 			this.button_editor_lists_bullets_left.Size = new System.Drawing.Size(22, 23);
 			this.button_editor_lists_bullets_left.TabIndex = 4;
 			this.button_editor_lists_bullets_left.Text = "<";
+			this.toolTip.SetToolTip(this.button_editor_lists_bullets_left, "Einrückung verringern");
 			this.button_editor_lists_bullets_left.UseVisualStyleBackColor = true;
 			this.button_editor_lists_bullets_left.Click += new System.EventHandler(this.OnButtonEditorListsBulletsLeftClick);
 			// 
@@ -481,6 +527,7 @@
 			this.button_editor_lists_numbered_right.Size = new System.Drawing.Size(22, 23);
 			this.button_editor_lists_numbered_right.TabIndex = 1;
 			this.button_editor_lists_numbered_right.Text = ">";
+			this.toolTip.SetToolTip(this.button_editor_lists_numbered_right, "Einrückung erhöhen");
 			this.button_editor_lists_numbered_right.UseVisualStyleBackColor = true;
 			this.button_editor_lists_numbered_right.Click += new System.EventHandler(this.OnButtonEditorListsNumberedRightClick);
 			// 
@@ -491,6 +538,7 @@
 			this.button_editor_lists_numbered_left.Size = new System.Drawing.Size(22, 23);
 			this.button_editor_lists_numbered_left.TabIndex = 0;
 			this.button_editor_lists_numbered_left.Text = "<";
+			this.toolTip.SetToolTip(this.button_editor_lists_numbered_left, "Einrückung verringern");
 			this.button_editor_lists_numbered_left.UseVisualStyleBackColor = true;
 			this.button_editor_lists_numbered_left.Click += new System.EventHandler(this.OnButtonEditorListsNumberedLeftClick);
 			// 
@@ -561,41 +609,22 @@
 			this.ToolStripMenuItem_help.Text = "Hilfe";
 			this.ToolStripMenuItem_help.Click += new System.EventHandler(this.OnToolStripMenuItemHelpClick);
 			// 
-			// contextMenuStrip_pagetext
+			// button_show_data
 			// 
-			this.contextMenuStrip_pagetext.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.toolStripMenuItem_pagetext_cut,
-            this.toolStripMenuItem_pagetext_copy,
-            this.toolStripMenuItem_pagetext_paste});
-			this.contextMenuStrip_pagetext.Name = "contextMenuStrip_pagetext";
-			this.contextMenuStrip_pagetext.Size = new System.Drawing.Size(149, 70);
-			// 
-			// toolStripMenuItem_pagetext_cut
-			// 
-			this.toolStripMenuItem_pagetext_cut.Name = "toolStripMenuItem_pagetext_cut";
-			this.toolStripMenuItem_pagetext_cut.Size = new System.Drawing.Size(148, 22);
-			this.toolStripMenuItem_pagetext_cut.Text = "Ausschneiden";
-			this.toolStripMenuItem_pagetext_cut.Click += new System.EventHandler(this.OnToolStripMenuItemPagetextCutClick);
-			// 
-			// toolStripMenuItem_pagetext_copy
-			// 
-			this.toolStripMenuItem_pagetext_copy.Name = "toolStripMenuItem_pagetext_copy";
-			this.toolStripMenuItem_pagetext_copy.Size = new System.Drawing.Size(148, 22);
-			this.toolStripMenuItem_pagetext_copy.Text = "Kopieren";
-			this.toolStripMenuItem_pagetext_copy.Click += new System.EventHandler(this.OnToolStripMenuItemPagetextCopyClick);
-			// 
-			// toolStripMenuItem_pagetext_paste
-			// 
-			this.toolStripMenuItem_pagetext_paste.Name = "toolStripMenuItem_pagetext_paste";
-			this.toolStripMenuItem_pagetext_paste.Size = new System.Drawing.Size(148, 22);
-			this.toolStripMenuItem_pagetext_paste.Text = "Einfügen";
-			this.toolStripMenuItem_pagetext_paste.Click += new System.EventHandler(this.OnToolStripMenuItemPagetextPasteClick);
+			this.button_show_data.Location = new System.Drawing.Point(535, 80);
+			this.button_show_data.Name = "button_show_data";
+			this.button_show_data.Size = new System.Drawing.Size(112, 23);
+			this.button_show_data.TabIndex = 43;
+			this.button_show_data.Text = "Daten anzeigen";
+			this.button_show_data.UseVisualStyleBackColor = true;
+			this.button_show_data.Click += new System.EventHandler(this.OnButtonShowDataClick);
 			// 
 			// MainForm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(660, 767);
+			this.Controls.Add(this.button_show_data);
 			this.Controls.Add(this.checkBox_compact);
 			this.Controls.Add(this.groupBox_editor_categories);
 			this.Controls.Add(this.treeView_categories);
@@ -625,6 +654,7 @@
 			this.Name = "MainForm";
 			this.Text = "Docusnap2Wiki";
 			this.Load += new System.EventHandler(this.OnMainFormLoad);
+			this.contextMenuStrip_pagetext.ResumeLayout(false);
 			this.groupBox_editor_headings.ResumeLayout(false);
 			this.groupBox_editor_styles.ResumeLayout(false);
 			this.groupBox_editor_diverse.ResumeLayout(false);
@@ -633,7 +663,6 @@
 			this.groupBox_editor_categories.ResumeLayout(false);
 			this.menuStrip.ResumeLayout(false);
 			this.menuStrip.PerformLayout();
-			this.contextMenuStrip_pagetext.ResumeLayout(false);
 			this.ResumeLayout(false);
 			this.PerformLayout();
 
@@ -674,7 +703,7 @@
 		private System.Windows.Forms.GroupBox groupBox_editor_diverse;
 		private System.Windows.Forms.Button button_editor_code;
 		private System.Windows.Forms.Button button_editor_quote;
-		private System.Windows.Forms.Button button1;
+		private System.Windows.Forms.Button button_editor_underlined;
 		private System.Windows.Forms.GroupBox groupBox_editor_lists;
 		private System.Windows.Forms.Button button_editor_lists_bullets_right;
 		private System.Windows.Forms.Button button_editor_lists_bullets_left;
@@ -693,6 +722,8 @@
 		private System.Windows.Forms.ToolStripMenuItem toolStripMenuItem_pagetext_cut;
 		private System.Windows.Forms.ToolStripMenuItem toolStripMenuItem_pagetext_copy;
 		private System.Windows.Forms.ToolStripMenuItem toolStripMenuItem_pagetext_paste;
+		private System.Windows.Forms.ToolTip toolTip;
+		private System.Windows.Forms.Button button_show_data;
 	}
 }
 
