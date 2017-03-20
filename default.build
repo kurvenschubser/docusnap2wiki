@@ -1,0 +1,51 @@
+<project name="Solution Build Example" default="makedist">
+    <property name="configuration" value="Release"/>
+    
+    <target name="clean" description="Delete all previously compiled binaries.">
+        <delete>
+            <fileset>
+                <include name="**/bin/**" />
+                <include name="**/obj/**" />
+                <include name="**/*.suo" />
+                <include name="**/*.user" />
+            </fileset>
+        </delete>
+    </target>
+    
+    <target name="build" description="Build all targets.">
+        <call target="build.winforms"/>
+    </target>
+    
+    <target name="rebuild" depends="clean, build" />
+
+    <target name="build.winforms">
+        <solution configuration="${configuration}" solutionfile="Docusnap2Wiki.sln">
+        </solution>
+        <property name="expected.output" value="bin/${configuration}/Docusnap2Wiki.exe"/>
+        <fail unless="${file::exists(expected.output)}">Output file doesn't exist in ${expected.output}</fail>
+    </target>
+
+	<target name="makedist" depends="deldist, makedist_real">
+		
+	</target>
+
+	<target name="makedist_real">
+		<copy overwrite="True" flatten="True" todir="distribution/Docusnap2Wiki">
+			<fileset>
+				<include name="Docusnap2Wiki/bin/Release/Docusnap2Wiki.exe"/>
+				<include name="Docusnap2Wiki/bin/Release/DotNetWikiBot.dll"/>
+				<include name="Docusnap2Wiki/bin/Release/helpfile.txt"/>
+			</fileset>
+		</copy>
+		<zip zipfile="distribution/Docusnap2Wiki.zip">
+			<fileset basedir="distribution">
+				<include name="**"/>
+			</fileset>
+		</zip>
+	</target>
+
+	<target name="deldist">
+		<delete dir="distribution"/>
+	</target>
+    
+</project>

@@ -11,9 +11,9 @@ namespace Docusnap2Wiki
 {
 	public partial class LoginForm : Form
 	{
-		public delegate void LoginSuccessEventHandler(object sender, LoginSuccessEventArgs e);
+		public delegate void LoginCredentialsProvidedEventHandler(object sender, LoginCredentialsProvidedEventArgs e);
 
-		public event LoginSuccessEventHandler LoginSuccess;
+		public event LoginCredentialsProvidedEventHandler LoginCredentialsProvided;
 
 
 		public LoginForm() : this("http://artemis/MediaWiki")
@@ -68,10 +68,19 @@ namespace Docusnap2Wiki
 				string wiki_url = this.textBox_wikiurl.Text;
 				string username = this.textBox_username.Text;
 				string pw = this.textBox_pw.Text;
-				this.LoginSuccess(this, new LoginSuccessEventArgs() 
-										{	WikiURL = wiki_url
-											, Username = username
-											, Password = pw });
+
+				LoginCredentialsProvidedEventArgs args =
+					new LoginCredentialsProvidedEventArgs() {	WikiURL = wiki_url, 
+															    Username = username, 
+																Password = pw, 
+																Cancel = false};
+				this.LoginCredentialsProvided(this, args);
+				if (args.Cancel)
+				{
+					MessageBox.Show("Die eingegebenen Daten konnten nicht bestätigt werden!", 
+									"Bitte prüfen Sie Ihre Eingabe");
+					return;
+				}
 				this.Close();
 			}
 		}
@@ -82,10 +91,11 @@ namespace Docusnap2Wiki
 		}
 	}
 
-	public class LoginSuccessEventArgs : EventArgs
+	public class LoginCredentialsProvidedEventArgs : EventArgs
 	{
 		public string WikiURL { get; set; }
 		public string Username { get; set; }
 		public string Password { get; set; }
+		public bool Cancel { get; set; }
 	}
 }

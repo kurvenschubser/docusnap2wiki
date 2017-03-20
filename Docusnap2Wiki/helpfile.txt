@@ -1,14 +1,23 @@
-﻿docusnap2wikihelp.chm
+﻿Docusnap2Wiki Hilfe
 
 Einzelne Steuerelemente
 =======================
 
 ## Input-Datei ##
+
 Hier kann der Benutzer eine CSV Datei auswählen, aus der der Kontext zur Formatierung des Seitentitels und -texts erstellt wird.
+
+## CSV hat Spaltenüberschriften ##
+
+Wenn die CSV Datei Spaltenüberschriften hat, werden diese für die Benennung der Spalten übernommen.
+
+## Kompaktiere anhand erster ausgewählter Spalte ##
+
+Wenn dieser Punkt ausgewählt wird, werden die Input-Zeilen anhand der Werte in der ersten ausgewählten Spalte gruppiert und dann zusammengeführt, so dass nachher bei unterschiedlichen Werten in den Feldern eine Auflistung aus diesen Werten entsteht.
 
 ## Filter ##
 
-Der Benutzer kann in diesem Steuerelement einzelne Spalten der Input-Datei abwählen, so dass diese nicht in die Erstellung des Kontext einfließen.
+Der Benutzer kann in diesem Steuerelement einzelne Spalten der Input-Datei abwählen, so dass diese nicht in die Erstellung des Kontextes einfließen.
 
 ## Vorlage ##
 
@@ -33,8 +42,9 @@ Die Eingaben einiger Textfelder werden formatiert mit Informationen aus dem Kont
 
 Um die Daten aus dem Kontext in die Textfelder zu bekommen, gibt der Benutzer Format-Markierer nach dem folgenden Muster ein:
 
-	{{{spaltenname}}}	=> fügt für jede erstellte Seite den Wert der entsprechenden Spalte aus der Input-Datei ein.
-	{index}				=> fügt für jede erstellte Seite den Zeilenindex der Input-Datei ein, d.h. erste Input-Zeile gleich 1, zweite Input-Zeile gleich 2 etc.
-	{row_count}			=> fügt die Gesamtanzahl an Daten-Zeilen der Input-Datei ein.
+	{{{spaltenname}}}						=> fügt für jede erstellte Seite den Wert der entsprechenden Spalte aus der Input-Datei ein.
+	{index}									=> fügt für jede erstellte Seite den Zeilenindex der Input-Datei ein, d.h. erste Input-Zeile gleich 1, zweite Input-Zeile gleich 2 etc.
+	{row_count}								=> fügt die Gesamtanzahl an Daten-Zeilen der Input-Datei ein.
+	{for i in iterable} {{{i}}} {endfor}	=> Schleifendurchlauf für jedes Element 'i' in der komma-separierten Auflistung 'iterable'. Im Schleifenkörper kann auf 'i' wie eine normale Variable zugegriffen werden.
 
 Alle anderen Eingaben in das Textfeld werden 1:1 übernommen.

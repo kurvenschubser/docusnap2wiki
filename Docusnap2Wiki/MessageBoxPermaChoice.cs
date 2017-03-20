@@ -21,6 +21,7 @@ namespace Docusnap2Wiki
 		public event ChoiceEventHandler Choice;
 
 		private ButtonDef[] button_defs;
+		private bool choice_handled;
 
 
 		public MessageBoxPermaChoice(string message = "", string title = "", ButtonDef[] button_defs = null)
@@ -31,11 +32,23 @@ namespace Docusnap2Wiki
 			this.Title = title;
 			this.ButtonDefs = button_defs;
 
+			this.choice_handled = false;
+
 			this.FormClosed += new FormClosedEventHandler(OnFormClosed);
+		}
+
+		public new DialogResult ShowDialog()
+		{
+			this.choice_handled = false;
+			return base.ShowDialog();
 		}
 
 		void OnFormClosed(object sender, FormClosedEventArgs e)
 		{
+			if (this.choice_handled)
+			{
+				return;
+			}
 			this.Choice(
 				this,
 				new ChoiceEventArgs
@@ -131,7 +144,7 @@ namespace Docusnap2Wiki
 
 		private void OnButtonClick(object sender, EventArgs e)
 		{
-			this.Close();
+			
 			Button b = (sender as Button);
 
 			ButtonDef def = this.ButtonDefs.First(o => o.Button == b);
@@ -143,11 +156,13 @@ namespace Docusnap2Wiki
 					break;
 				}
 			}
+			this.choice_handled = true;
 			this.Choice(
 				this, 
 				new ChoiceEventArgs
 					{    IsPermanent = this.checkBox_donotaskagain.Checked
 					   , Answer = def.Answer  });
+			this.Close();
 		}
 	}
 

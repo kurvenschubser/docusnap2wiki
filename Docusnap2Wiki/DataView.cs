@@ -20,7 +20,7 @@ namespace Docusnap2Wiki
 			
 		}
 
-		public DataView(string[] colnames, List<string[]> data)
+		public DataView(IEnumerable<string> colnames, IEnumerable<string[]> data)
 		{
 			InitializeComponent();
 
@@ -28,7 +28,7 @@ namespace Docusnap2Wiki
 			Populate(data);
 		}
 
-		public void SetupColumnNames(string [] colnames)
+		public void SetupColumnNames(IEnumerable<string> colnames)
 		{
 			this.listView.SuspendLayout();
 
@@ -42,7 +42,7 @@ namespace Docusnap2Wiki
 			this.listView.ResumeLayout();
 		}
 
-		public void Populate(List<string[]> data)
+		public void Populate(IEnumerable<string[]> data)
 		{
 			IEnumerator<string[]> rows = data.GetEnumerator();
 			List<ListViewItem> items = new List<ListViewItem>();

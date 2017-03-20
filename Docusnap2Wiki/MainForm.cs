@@ -28,82 +28,109 @@ namespace Docusnap2Wiki
 	public partial class MainForm : Form
 	{
 		List<string[]> rows;
-		string[] categories;
 		AutoCompleteStringCollection autocomplete_templates;
 
-		Regex RE_CATEGORY = new Regex(@"\[\[Kategorie:.*\]\]");
-		Regex RE_FORLOOP = new Regex(
-			@".*?(?<loop_begin>[{])\s?for\s?"
-				+ @"(?<loop_var>[a-zA-Z_]+[a-zA-Z0-9]*) in "
-				+ @"(?<loop_iterable>[a-zA-Z_]+[a-zA-Z0-9]*)\s?}(?<loop_body>.*)"
-				+ @"(?<loop_end>{\s?endfor\s?}).*"
-			, RegexOptions.Singleline);
 
-		public MainForm()
+		public MainForm(IController controller)
 		{
 			InitializeComponent();
 
-			this.textBox_pagetitle.TextChanged += new EventHandler(OnPageTitleTextChanged);
-			this.textBox_template.KeyUp += new KeyEventHandler(OnTextboxTemplateKeyUp);
-			this.textBox_template.LostFocus += new EventHandler(OnTextboxTemplateLostFocus);
-			
-			this.treeView_categories.AfterCheck += new TreeViewEventHandler(OnTreeViewCategoriesAfterCheck);
+            this.Controller = controller;
+            this.Controller.CategoriesChanged += OnCategoriesChanged;
+            this.Controller.CSVColumnsChanged += OnCSVColumnsChanged;
 
-			//this.richTextBox_pagetext.ModifiedChanged += new EventHandler(OnRichTextBoxPagetextModifiedChanged);
-
-			this.richTextBox_pagetext.TextChanged += new EventHandler(OnRichTextBoxPagetextTextChanged);
+			this.textBox_pagetitle.TextChanged += OnPageTitleTextChanged;
+			this.textBox_template.KeyUp += OnTextboxTemplateKeyUp;
+			this.textBox_template.LostFocus += OnTextboxTemplateLostFocus;
+			this.treeView_categories.AfterCheck += OnTreeViewCategoriesAfterCheck;
+            this.treeView_columns.AfterCheck += OnTreeViewColumnsAfterCheck;
+			this.richTextBox_pagetext.TextChanged += OnRichTextBoxPagetextTextChanged;
 		}
+
+        void OnTreeViewColumnsAfterCheck(object sender, TreeViewEventArgs e)
+        {
+            int i = this.Controller.AllCSVColumns.ToList().IndexOf(e.Node.Text);
+            if (e.Node.Checked)
+            {
+                this.Controller.SelectedCSVColumns = this.Controller.SelectedCSVColumns.Union(
+                    new HashSet<int>(new int[] { i }));
+            }
+            else
+            {
+                this.Controller.SelectedCSVColumns = this.Controller.SelectedCSVColumns.Except(
+                    new HashSet<int>(new int[] { i }));
+            }
+        }
+
+        void OnCategoriesChanged(object sender, CategoriesChangedEventArgs e)
+        {
+            this.UpdateTreeView(this.treeView_categories, e.AllCategories,
+				e.SelectedCategories);
+        }
+
+        void OnCSVColumnsChanged(object sender, CSVColumnsChangedEventArgs e)
+        {
+            string[] all_columns = e.AllCSVColumns.ToArray();
+            this.UpdateTreeView(this.treeView_columns, e.AllCSVColumns,
+				e.SelectedCSVColumns.Select(o => all_columns[o]));
+        }
+
+        void UpdateTreeView(TreeView tv, 
+							IEnumerable<string> all_nodes, 
+							IEnumerable<string> selected_nodes)
+        {
+            tv.BeginUpdate();
+            tv.Nodes.Clear();
+
+            List<TreeNode> nodes = new List<TreeNode>();
+            foreach (string nodetext in all_nodes)
+            {
+                TreeNode n = new TreeNode(nodetext);
+                n.Checked = selected_nodes.Contains(nodetext);
+                nodes.Add(n);
+            }
+            tv.Nodes.AddRange(nodes.ToArray());
+            tv.EndUpdate();
+        }
 
 		void OnRichTextBoxPagetextTextChanged(object sender, EventArgs e)
 		{
-			this.HandlePageTextModified();
+            this.UpdateCategories();
 		}
 
 		void OnRichTextBoxPagetextModifiedChanged(object sender, EventArgs e)
 		{
-			this.HandlePageTextModified();
+            this.UpdateCategories();
 		}
 
-		void HandlePageTextModified()
-		{
-			string txt = this.richTextBox_pagetext.Text;
-
-			Regex re = new Regex(@"\[\[Kategorie:(.*?)\]\]");
-			MatchCollection matches = re.Matches(txt);
-
-			List<string> cats = new List<string>();
-
-			int caret_pos = this.richTextBox_pagetext.SelectionStart;
-
-			foreach (Match m in matches)
-			{
-				if (m.Groups[1].Index <= caret_pos && caret_pos <= m.Groups[1].Index + m.Groups[1].Length)
-				{
-					continue;
-				}
-				cats.Add(m.Groups[1].Value);
-			}
-
-			HashSet<string> cats_union = new HashSet<string>(this.CurrentlySelectedCategories.Union(cats));
-			if (cats_union.Count == this.CurrentlySelectedCategories.Count())
-			{
-				return;
-			}
-
-			this.Categories = this.Categories.Union(cats).ToArray();
-			this.CurrentlySelectedCategories = cats_union;
-
-			this.SetupCategories(this.Categories, this.CurrentlySelectedCategories);
-		}
+        private void UpdateCategories()
+        {
+            int selection_start = this.richTextBox_pagetext.SelectionStart;
+            this.Controller.SetSelectedCategories(
+                this.Controller.ExtractCategories(this.richTextBox_pagetext.Text
+                    , this.richTextBox_pagetext.SelectionStart));
+            this.richTextBox_pagetext.SelectionStart = selection_start;
+			this.UpdateTreeView(this.treeView_categories, 
+								this.Controller.AllCategories, 
+								this.Controller.SelectedCategories);
+        }
 
 		void OnTreeViewCategoriesAfterCheck(object sender, TreeViewEventArgs e)
 		{
 			if (e.Node.Checked)
 			{
-				AddCategoryToPage(e.Node.Text);
+                this.Controller.SetSelectedCategories(
+                    this.Controller.SelectedCategories.Union(
+                        new HashSet<string>(new string[] { e.Node.Text })));
+
+				this.AddCategoryToPage(e.Node.Text);
 			}
 			else
 			{
+                this.Controller.SetSelectedCategories(
+                    this.Controller.SelectedCategories.Except(
+                        new HashSet<string>(new string[] { e.Node.Text })));
+
 				StripCategoryFromPage(e.Node.Text);
 			}
 		}
@@ -164,7 +191,7 @@ namespace Docusnap2Wiki
 
 		void LoadTemplatePage(string pagetitle)
 		{
-			Page p = new Page(this.Site, pagetitle);
+			Page p = new Page(this.Controller.Site, pagetitle);
 			p.Load();
 			if (!p.IsEmpty())
 			{
@@ -172,7 +199,7 @@ namespace Docusnap2Wiki
 			}
 			else
 			{
-				MessageBox.Show("Diese Seite ist nicht-existent.", "Vorlage nicht gefunden");
+				MessageBox.Show("Diese Seite gibt es nicht.", "Vorlage nicht gefunden");
 			}
 		}
 
@@ -183,99 +210,14 @@ namespace Docusnap2Wiki
 
 		private void OnBrowseInputFileClick(object sender, EventArgs e)
 		{
-			FileDialog dlg = new OpenFileDialog();
-			dlg.Title = "CSV Datei wählen";
-			dlg.Filter = "CSV Dateien (*.csv)|*.csv|Alle Dateien (*.*)|*.*";
-			if (dlg.ShowDialog() == System.Windows.Forms.DialogResult.OK)
-			{
-				this.textBox_input_path.Text = dlg.FileName;
-				IEnumerator<string[]> rows_enumerator = this.ReadCSV(dlg.FileName).GetEnumerator();
-				if (!rows_enumerator.MoveNext())
-				{
-					MessageBox.Show("Datei enthält keine Einträge");
-					return;
-				}
-
-				if (this.checkBox_csv_has_column_titles.Checked)
-				{
-					try
-					{
-						this.UpdateColumnNodes(rows_enumerator.Current);
-					}
-					catch (Microsoft.VisualBasic.FileIO.MalformedLineException ex)
-					{
-						MessageBox.Show(ex.Message);
-						return;
-					}
-				}
-				else
-				{
-					this.UpdateColumnNodes(
-						Enumerable.Range(1, rows_enumerator.Current.Length).Select(
-							o => string.Format("Spalte {0}", o)
-						).ToArray()
-					);
-				}
-
-				this.UpdateCSVInput(rows_enumerator);			
-			}
-		}
-
-		private void UpdateCSVInput(IEnumerator<string[]> rows_enumerator)
-		{
-			List<string[]> new_rows = new List<string[]>();
-			try
-			{
-				while (rows_enumerator.MoveNext())
-				{
-					new_rows.Add(rows_enumerator.Current);
-				}
-			}
-			catch (Microsoft.VisualBasic.FileIO.MalformedLineException ex)
-			{
-				MessageBox.Show(ex.Message);
-			}
-
-			if (this.checkBox_compact.Checked)
-			{
-				List<int> selected_columns = new List<int>(this.SelectedCSVColumns);
-				if (selected_columns.Count == 0)
-				{
-					MessageBox.Show("Keine Spalten ausgewählt");
-				}
-				else
-				{
-					new_rows = this.CompactRows(new_rows, selected_columns[0]);
-				}
-			}
-
-			this.Rows = new_rows;	
-		}
-
-		void UpdateColumnNodes(string[] colnames)
-		{
-			this.treeView_columns.BeginUpdate();
-			this.treeView_columns.Nodes.Clear();
-			TreeNode n = null;
-			foreach (string colname in colnames)
-			{
-				n = new TreeNode(colname);
-				n.Checked = true;
-				this.treeView_columns.Nodes.Add(n);
-			}
-			this.treeView_columns.EndUpdate();
-		}
-
-		IEnumerable<string[]> ReadCSV(string filepath)
-		{
-			Microsoft.VisualBasic.FileIO.TextFieldParser p = new Microsoft.VisualBasic.FileIO.TextFieldParser(filepath);
-			p.TextFieldType = Microsoft.VisualBasic.FileIO.FieldType.Delimited;
-			p.Delimiters = new String[] {";"};
-
-			while (!p.EndOfData)
-			{
-				yield return p.ReadFields();
-			}
+            FileDialog dlg = new OpenFileDialog();
+            dlg.Title = "CSV Datei wählen";
+            dlg.Filter = "CSV Dateien (*.csv)|*.csv|Alle Dateien (*.*)|*.*";
+            if (dlg.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+            {
+                this.textBox_input_path.Text = dlg.FileName;
+                this.Controller.OpenCSVFile(dlg.FileName);
+            }
 		}
 
 		private void OnButtonUploadClick(object sender, EventArgs e)
@@ -284,8 +226,9 @@ namespace Docusnap2Wiki
 
 			Page p = null;
 			DialogResult answer = DialogResult.Retry;		// default value corresponding to 'null'
+            IEnumerable<string[]> input_rows;
 
-			if (!RE_CATEGORY.Match(this.richTextBox_pagetext.Text).Success)
+			if (!this.Controller.SelectedCategories.Any())
 			{
 				answer = MessageBox.Show("Die Seite ist keiner Kategorie "
 					+ "([[Kategoriename]]) zugeordnet. Wollen Sie dennoch fortfahren?"
@@ -297,40 +240,27 @@ namespace Docusnap2Wiki
 					return;
 				}
 			}
-			
-			if (this.Rows.Count == 0)
-			{
-				answer = MessageBox.Show("Es ist keine CSV Datei geladen. Wollen Sie die Seite so, wie sie ist, erstellen?", 
-					"Keine Kontext-Informationen", MessageBoxButtons.YesNo);
-				if (answer == System.Windows.Forms.DialogResult.Yes)
-				{
-					string pagetext = this.FormatWithContext(this.richTextBox_pagetext.Text, new Dictionary<string, object>(), 1, 1);
-					string pagetitle = this.FormatWithContext(this.textBox_pagetitle.Text, new Dictionary<string, object>(), 1, 1);
-					if (string.IsNullOrEmpty(pagetitle))
-					{
-						MessageBox.Show("Es muss ein Seitentitel angegeben werden.", "Leerer Seitentitel");
-						return;
-					}
-					p = new Page(this.Site, pagetitle);
-					p.Load();
-					if (!p.IsEmpty())
-					{
-						if (MessageBox.Show("Die Seite gibt es bereits. Wollen Sie sie überschreiben?", "Existierende Seite", MessageBoxButtons.YesNo) == System.Windows.Forms.DialogResult.No)
-						{
-							return;
-						}
-					}
-					p.text = pagetext;
-					p.Save(this.textBox_comment.Text, false);
-					return;
-				}
-				else
-				{
-					return;
-				}
-			}
 
-			List<Tuple<GenerationState, string, string>> generated_contents = new List<Tuple<GenerationState, string, string>>();
+            if (!this.Controller.CSVRows.Any())
+            {
+                answer = MessageBox.Show("Es ist keine CSV Datei geladen. Wollen Sie die Seite so, wie sie ist, erstellen?",
+                    "Keine Kontext-Informationen", MessageBoxButtons.YesNo);
+                if (answer == System.Windows.Forms.DialogResult.Yes)
+                {
+                    List<string[]> L = new List<string[]>();
+                    L.Add(Enumerable.Range(0, this.Controller.AllCSVColumns.Count()).Select(o => string.Empty).ToArray());
+                    input_rows = L;
+                }
+                else
+                {
+                    return;
+                }
+            }
+            else
+            {
+                input_rows = this.Controller.CSVRows;
+            }
+
 			MessageBoxPermaChoice msgbox = new MessageBoxPermaChoice(
 				title: "Existierende Seite"
 				, button_defs: new ButtonDef[] 
@@ -351,12 +281,14 @@ namespace Docusnap2Wiki
 			bool is_permanent = false;
 			msgbox.Choice += (s, args) => { is_permanent = args.IsPermanent; answer = args.Answer; };
 
+            List<Tuple<GenerationState, string, string>> generated_contents = new List<Tuple<GenerationState, string, string>>();
+
 			int current_row_no = 1;
-			foreach (string[] row in this.Rows)
+			foreach (string[] row in input_rows)
 			{
-				Dictionary<string, object> context = this.MakeContext(row);
-				string pagetext = this.FormatWithContext(this.richTextBox_pagetext.Text, context, current_row_no, this.Rows.Count);
-				string pagetitle = this.FormatWithContext(this.textBox_pagetitle.Text, context, current_row_no, this.Rows.Count);
+				Dictionary<string, object> context = this.Controller.MakeContext(row, this.Controller.AllCSVColumns, this.Controller.SelectedCSVColumns);
+				string pagetext = this.Controller.FormatWithContext(this.richTextBox_pagetext.Text, context, current_row_no, this.Controller.CSVRows.Count());
+				string pagetitle = this.Controller.FormatWithContext(this.textBox_pagetitle.Text, context, current_row_no, this.Controller.CSVRows.Count());
 				GenerationState write_status = GenerationState.New;
 				
 				if (string.IsNullOrEmpty(pagetitle))
@@ -366,7 +298,7 @@ namespace Docusnap2Wiki
 				}
 				else
 				{
-					p = new Page(this.Site, pagetitle);
+					p = new Page(this.Controller.Site, pagetitle);
 					p.Load();
 					if (!p.IsEmpty())
 					{
@@ -401,7 +333,6 @@ namespace Docusnap2Wiki
 				);
 
 				generated_contents.Add(tup);
-
 				current_row_no++;
 			}
 
@@ -409,7 +340,7 @@ namespace Docusnap2Wiki
 			{
 				if (tup.Item1 != GenerationState.None)
 				{
-					p = new Page(this.Site, tup.Item2);
+					p = new Page(this.Controller.Site, tup.Item2);
 					p.Load();
 					p.text = tup.Item3;
 					p.Save(this.textBox_comment.Text, false);
@@ -418,303 +349,178 @@ namespace Docusnap2Wiki
 
 			Cursor.Current = Cursors.Default;
 
-			string siteurl = System.IO.Path.Combine(Site.site, Site.indexPath);
-			string[] gen_state_desc = new string[] {"Ignoriert", "Neu", "Überschrieben"};
-
-			new MessageBoxWithDetails(
-				  "Zusammenfassung"
-				, string.Format("Neue Seiten: {0}." + Environment.NewLine 
-								+ "Überschriebene Seiten: {1}" + Environment.NewLine 
-								+ "Ignorierte Einträge: {2}"
-								+ "Einträge insgesamt: {3}"
-								, generated_contents.Count(o => o.Item1 == GenerationState.New)
-								, generated_contents.Count(o => o.Item1 == GenerationState.Overwrite)
-								, generated_contents.Count(o => o.Item1 == GenerationState.None)
-								, generated_contents.Count())
-				, string.Join(
-					  Environment.NewLine
-					, generated_contents.Select(
-						o => string.Format(
-							"{0}: {1}"
-							, gen_state_desc[(int)o.Item1]
-							, System.IO.Path.Combine(siteurl, o.Item2)
-						)
-					).ToArray()
-				)
-			).ShowDialog();
+            this.ReportUploadDetails(generated_contents);
 		}
 
-		public string FormatWithContext(string fmt, Dictionary<string, object> context, int row_no, int rows_count)
-		{
-			string rv = fmt.Replace("{index}", row_no.ToString()).Replace("{row_count}", rows_count.ToString());
-			
-			Match match_forloop = null;
-			do
-			{
-				match_forloop = RE_FORLOOP.Match(rv);
-				if (match_forloop.Success)
-				{
-					int loop_begin = match_forloop.Groups["loop_begin"].Index;
-					int loop_end = match_forloop.Groups["loop_end"].Index + match_forloop.Groups["loop_end"].Length;
-					string loop_iterable = match_forloop.Groups["loop_iterable"].Value;
-					string loop_var = match_forloop.Groups["loop_var"].Value;
-					string loop_body = match_forloop.Groups["loop_body"].Value;
-					
-					IEnumerable<string> iterable = ConvertToEnumerable(context[loop_iterable].ToString());
+        private void ReportUploadDetails(IEnumerable<Tuple<GenerationState, string, string>> contents)
+        {
+            string siteurl = System.IO.Path.Combine(this.Controller.Site.site, this.Controller.Site.indexPath);
+            string[] gen_state_desc = new string[] { "Ignoriert", "Neu", "Überschrieben" };
 
-					string rvcopy = rv;
-					rv = rvcopy.Substring(0, loop_begin);
-					foreach (object o in iterable)
-					{
-						Dictionary<string, object> loop_context = new Dictionary<string, object>(context);
-						loop_context.Add(loop_var, o.ToString());
+            new MessageBoxWithDetails(
+                  "Zusammenfassung"
+                , string.Format("Neue Seiten: {0}." + Environment.NewLine
+                                + "Überschriebene Seiten: {1}" + Environment.NewLine
+                                + "Ignorierte Einträge: {2}" + Environment.NewLine
+                                + "Einträge insgesamt: {3}"
+                                , contents.Count(o => o.Item1 == GenerationState.New)
+                                , contents.Count(o => o.Item1 == GenerationState.Overwrite)
+                                , contents.Count(o => o.Item1 == GenerationState.None)
+                                , contents.Count())
+                , string.Join(
+                      Environment.NewLine
+                    , contents.Select(
+                        o => string.Format(
+                            "{0}: {1}"
+                            , gen_state_desc[(int)o.Item1]
+                            , System.IO.Path.Combine(siteurl, o.Item2)
+                        )
+                    ).ToArray()
+                )
+            ).ShowDialog();
+        }
 
-						rv += FormatWithContext(loop_body, 
-								                loop_context, 
-									            row_no, 
-												rows_count);
-					}
-					rv += rvcopy.Substring(loop_end);
-				}
-			} while(match_forloop.Success);
-
-			foreach (KeyValuePair<string, object> kv in context)
-			{
-				rv = rv.Replace("{{{" + kv.Key + "}}}", kv.Value.ToString());
-			}
-			return rv;
-		}
-
-		public IEnumerable<string> ConvertToEnumerable(string input)
-		{
-			try
-			{
-				return input.Split(',').Select(o => o.Trim());
-			}
-			catch(Exception)
-			{
-				return new string[]{};
-			}
-		}
-
-		public Dictionary<string, object> MakeContext(string[] row)
-		{
-			Dictionary<string, object> context = new Dictionary<string, object>();
-			int i = 0;
-			foreach (TreeNode n in this.treeView_columns.Nodes)
-			{
-				if (n.Checked)
-				{
-					context[n.Text] = row[i];
-				}
-
-				i++;
-			}
-			return context;
-		}
 
 		private void OnMainFormLoad(object sender, EventArgs e)
 		{
 			this.SetupTemplates();
-			this.SetupCategories();
+			this.Controller.SetupCategories();
 		}
 
 		private void SetupTemplates()
 		{
 			this.autocomplete_templates = new AutoCompleteStringCollection();
 			this.textBox_template.AutoCompleteSource = AutoCompleteSource.CustomSource;
-			this.autocomplete_templates.AddRange(this.GetAllTemplates());
+			this.autocomplete_templates.AddRange(this.Controller.GetAllTemplates().ToArray());
 			this.textBox_template.AutoCompleteCustomSource = this.autocomplete_templates;
 			this.textBox_template.AutoCompleteMode = AutoCompleteMode.SuggestAppend;
 		}
 
-		private Site site;
-		public Site Site
+
+		void OnLoginSuccess(object sender, LoginCredentialsProvidedEventArgs e)
 		{
-			get
-			{
-				if (this.site == null)
-				{
-#if DEBUG
-					this.site = new Site("http://artemis/MediaWiki", "Mengelhardt", "uiaenrtd12!\"");
-#else
-					LoginForm f = new LoginForm();
-					f.LoginSuccess += new LoginForm.LoginSuccessEventHandler(OnLoginSuccess);
-					f.ShowDialog();
-#endif
-				}
-				return this.site;
-			}
-		}
-
-		void SetupCategories()
-		{
-			this.SetupCategories(this.GetAllCategories(), this.CurrentlySelectedCategories);
-		}
-
-		void SetupCategories(IEnumerable<string> cats, IEnumerable<string> checked_cats)
-		{
-			List<string> checked_cats_ = checked_cats.ToList();
-
-			this.treeView_categories.BeginUpdate();
-			this.treeView_categories.Nodes.Clear();
-
-			List<TreeNode> nodes = new List<TreeNode>();
-			foreach (string cat in cats)
-			{
-				TreeNode n = new TreeNode(cat);
-				nodes.Add(n);
-			}
-
-			this.treeView_categories.Nodes.AddRange(nodes.ToArray());
-
-			this.CurrentlySelectedCategories = checked_cats;
-
-			this.treeView_categories.EndUpdate();
-		}
-
-		void OnLoginSuccess(object sender, LoginSuccessEventArgs e)
-		{
-			this.site = new Site(e.WikiURL, e.Username, e.Password);
+			this.Controller.Site = new Site(e.WikiURL, e.Username, e.Password);
 		}
 
 		public void FillFormFromPage(Page p)
 		{
 			this.textBox_comment.Text = p.comment;
 			this.richTextBox_pagetext.Text = p.text;
-
-			List<string> cats_in_page = p.GetAllCategories().ToList();
-
-			this.CurrentlySelectedCategories = cats_in_page;
 		}
 
 		private void OnCheckBoxCsvHasColumnTitlesCheckedChanged(object sender, EventArgs e)
 		{
-			IEnumerator<string[]> rows_enumerator = 
-				this.ReadCSV(this.textBox_input_path.Text).GetEnumerator();
-
-			if (!rows_enumerator.MoveNext())
-			{
-				MessageBox.Show("Datei enthält keine Einträge");
-				return;
-			}
-
-			if (this.checkBox_csv_has_column_titles.Checked)
-			{
-				try
-				{
-					this.UpdateColumnNodes(rows_enumerator.Current);
-				}
-				catch (Microsoft.VisualBasic.FileIO.MalformedLineException ex)
-				{
-					MessageBox.Show(ex.Message);
-					return;
-				}
-			}
-			else
-			{
-				this.UpdateColumnNodes(
-					Enumerable.Range(1, rows_enumerator.Current.Length).Select(
-						o => string.Format("Spalte {0}", o)
-					).ToArray()
-				);
-			}
+            this.Controller.CSVHasColumnTitles = (sender as CheckBox).Checked;
 		}
 
-		private void DisplayHelp()
-		{
-			System.Windows.Forms.Help.ShowHelp(this, System.IO.Path.Combine(Application.StartupPath, "helpfile.txt"));
-		}
-
+		
 		private void OnEditorButtonItalicClick(object sender, EventArgs e)
 		{
-			this.WrapTextInSelection("''");
+			this.WrapTextInSelectionHelper("''");
 		}
 
-		private void WrapTextIn(int start, int end, string before, string after)
+		
+
+		private void WrapTextInSelectionHelper(string token)
 		{
-			string txt = this.richTextBox_pagetext.Text;
-			this.richTextBox_pagetext.Text = txt.Substring(0, start) + before + txt.Substring(start, end - start) + after + txt.Substring(end);
+			this.richTextBox_pagetext.Text = 
+				this.Controller.WrapTextInSelection(
+					this.richTextBox_pagetext.Text, 
+					this.richTextBox_pagetext.SelectionStart, 
+					this.richTextBox_pagetext.SelectionStart 
+						+ this.richTextBox_pagetext.SelectionLength, 
+					token);
 		}
 
-		private void WrapTextInSelection(string with_)
+		private void WrapTextInSelectionWithTagHelper(string token)
 		{
-			this.WrapTextIn(this.richTextBox_pagetext.SelectionStart, this.richTextBox_pagetext.SelectionStart + this.richTextBox_pagetext.SelectionLength, with_, with_);
+			this.richTextBox_pagetext.Text = 
+				this.Controller.WrapTextInSelectionWithTag(
+					this.richTextBox_pagetext.Text, 
+					this.richTextBox_pagetext.SelectionStart,
+					this.richTextBox_pagetext.SelectionStart
+						+ this.richTextBox_pagetext.SelectionLength, 
+					token);
 		}
 
-		private void WrapTextInSelectionWithTag(string tag)
+		private void ChangeListLevelHelper(string pointsign, int direction)
 		{
-			this.WrapTextIn(this.richTextBox_pagetext.SelectionStart, this.richTextBox_pagetext.SelectionStart + this.richTextBox_pagetext.SelectionLength, "<" + tag + ">", "</" + tag + ">");
-		}
-
-		private void WrapTextInSelectionWithLink()
-		{
-			string txt = this.richTextBox_pagetext.Text;
 			int start = this.richTextBox_pagetext.SelectionStart;
-			int end = this.richTextBox_pagetext.SelectionStart + this.richTextBox_pagetext.SelectionLength;
-			string before = "[[";
-			string after = "]]";
-			this.richTextBox_pagetext.Text = txt.Substring(0, start) + before + txt.Substring(start, end-start).Replace(' ', '_') + "|" + txt.Substring(start, end - start) + after + txt.Substring(end);
+			string oldtext = this.richTextBox_pagetext.Text;
+			string newtext = this.Controller.ChangeListLevel(
+				oldtext, start, pointsign, direction);
+
+			if (newtext != oldtext)
+			{
+				this.richTextBox_pagetext.Text = newtext;
+				this.richTextBox_pagetext.SelectionStart = 
+					Math.Max((direction < 0 ? start - 1 : start), 0);
+			}
 		}
 
 		private void OnButtonEditorBoldClick(object sender, EventArgs e)
 		{
-			this.WrapTextInSelection("'''");
+			this.WrapTextInSelectionHelper("'''");
 		}
 
 		private void OnButtonEditorItalicBoldClick(object sender, EventArgs e)
 		{
-			this.WrapTextInSelection("'''''");
+			this.WrapTextInSelectionHelper("'''''");
 		}
 
 		private void OnButtonEditorStrikeClick(object sender, EventArgs e)
 		{
-			this.WrapTextInSelectionWithTag("strike");
+			this.WrapTextInSelectionWithTagHelper("strike");
 		}
 
 		private void OnButtonEditorNowikiClick(object sender, EventArgs e)
 		{
-			this.WrapTextInSelectionWithTag("nowiki");
+			this.WrapTextInSelectionWithTagHelper("nowiki");
 		}
 
 		private void OnButtonEditorHeading2Click(object sender, EventArgs e)
 		{
-			this.WrapTextInSelection(" == ");
+			this.WrapTextInSelectionHelper(" == ");
 		}
 
 		private void OnButtonEditorHeading3Click(object sender, EventArgs e)
 		{
-			this.WrapTextInSelection(" === ");
+			this.WrapTextInSelectionHelper(" === ");
 		}
 
 		private void OnButtonEditorHeading4Click(object sender, EventArgs e)
 		{
-			this.WrapTextInSelection(" ==== ");
+			this.WrapTextInSelectionHelper(" ==== ");
 		}
 
 		private void OnButtonEditorHeading5Click(object sender, EventArgs e)
 		{
-			this.WrapTextInSelection(" ===== ");
+			this.WrapTextInSelectionHelper(" ===== ");
 		}
 
 		private void OnButtonEditorHeading6Click(object sender, EventArgs e)
 		{
-			this.WrapTextInSelection(" ====== ");
+			this.WrapTextInSelectionHelper(" ====== ");
 		}
 
 		private void OnButtonEditorLinkClick(object sender, EventArgs e)
 		{
-			this.WrapTextInSelectionWithLink();
+			this.richTextBox_pagetext.Text = 
+				this.Controller.WrapTextInSelectionWithLink(
+					this.richTextBox_pagetext.Text, 
+					this.richTextBox_pagetext.SelectionStart, 
+					this.richTextBox_pagetext.SelectionStart
+						+ this.richTextBox_pagetext.SelectionLength);
 		}
 
 		private void OnButtonEditorCodeClick(object sender, EventArgs e)
 		{
-			this.WrapTextInSelectionWithTag("code");
+			this.WrapTextInSelectionWithTagHelper("code");
 		}
 
 		private void OnButtonEditorQuoteClick(object sender, EventArgs e)
 		{
-			this.WrapTextInSelectionWithTag("blockquote");
+			this.WrapTextInSelectionWithTagHelper("blockquote");
 		}
 
 		private void OnButtonEditorCategoryAddClick(object sender, EventArgs e)
@@ -722,285 +528,35 @@ namespace Docusnap2Wiki
 			this.AddCategoryToPage("Kategoriename");
 		}
 
-		private void ChangeListLevel(string pointsign, int direction)
-		{
-			if (direction == 0)
-			{
-				throw new ArgumentException("direction must not be greater or less than 0.");
-			}
-
-			string newline = "\n";
-
-			string txt = this.richTextBox_pagetext.Text;
-			int start = this.richTextBox_pagetext.SelectionStart;
-
-			List<string> lines = txt.Split(new string[] { newline },StringSplitOptions.None).ToList();
-			List<string> res = new List<string>();
-
-			int line_index = 0;
-			int count = 0;
-			foreach (string line in lines)
-			{
-				count += line.Length + 1;
-				if (start < count)
-				{
-					break;
-				}
-				line_index++;
-			}
-
-			int i = 0;
-			while (i < line_index)
-			{
-				res.Add(lines[i++]);
-			}
-
-			// get index of pointsign and add another pointsign or strip it, according to *direction*
-			string ln = lines[line_index];
-			if (ln.IndexOf(pointsign) == -1)
-			{
-				res.Add((direction < 0 ? string.Empty : pointsign) + ln);
-			}
-			else
-			{
-				for (int j = 0; j < ln.Length; j++)
-				{
-					if (ln.Substring(j, 1) == pointsign)
-					{
-						if (direction < 0)
-						{
-							res.Add(ln.Substring(0, j) + ln.Substring(j + 1));
-						}
-						else
-						{
-							res.Add(ln.Substring(0, j) + pointsign + ln.Substring(j));
-						}
-						break;
-					}
-				}
-			}
-
-			while (++i < lines.Count)
-			{
-				res.Add(lines[i]);
-			}
-
-			string newtext =string.Join(newline, res.ToArray());
-			
-
-			if (newtext != txt)
-			{
-				this.richTextBox_pagetext.Text = newtext;
-				this.richTextBox_pagetext.SelectionStart = Math.Max((direction < 0 ? start - 1 : start), 0);
-			}
-		}
-
 		private void OnButtonEditorListsNumberedLeftClick(object sender, EventArgs e)
 		{
-			this.ChangeListLevel("#", -1);
+			this.ChangeListLevelHelper("#", -1);
 		}
 
 
 		private void OnButtonEditorListsNumberedRightClick(object sender, EventArgs e)
 		{
-			ChangeListLevel("#", 1);
+			ChangeListLevelHelper("#", 1);
 		}
 
 		private void OnButtonEditorListsBulletsLeftClick(object sender, EventArgs e)
 		{
-			ChangeListLevel("*", -1);
+			ChangeListLevelHelper("*", -1);
 		}
 
 		private void OnButtonEditorListsBulletsRightClick(object sender, EventArgs e)
 		{
-			ChangeListLevel("*", 1);
-		}
-
-		public bool IsPageProtected(string pagetitle)
-		{
-			string[] bits = { Site.site, Site.indexPath, "index.php?title=", 
-									System.Uri.EscapeUriString(pagetitle) };
-			string src = Site.GetPageHTM(string.Join("", bits));
-			return !src.Contains("...");
-		}
-
-		private string[] GetAllCategories()
-		{
-			List<string> cats = new List<string>();
-			string[] bits = { Site.site, Site.indexPath, 
-								"api.php?format=xml&action=query&list=allcategories" };
-			string src = Site.GetPageHTM(string.Join("", bits));
-
-			XmlDocument doc = new XmlDocument();
-			doc.LoadXml(src);
-			XmlNode node = doc.SelectSingleNode("/api/query/allcategories");
-			foreach (XmlNode n in node)
-			{
-				cats.Add(n.InnerText.Trim());
-			}
-			return cats.ToArray();
-		}
-
-		private string[] GetAllTemplates()
-		{
-			List<string> templates = new List<string>();
-			string[] bits = { Site.site, Site.indexPath, 
-								"api.php?action=query&format=xml&list=allpages&aplimit=5000&apnamespace=10" };
-			string url = string.Join("", bits);
-			string src = Site.GetPageHTM(url);
-
-			XmlDocument doc = new XmlDocument();
-			doc.LoadXml(src);
-			XmlNodeList nodes = doc.SelectNodes("/api/query/allpages/p");
-			foreach (XmlNode n in nodes)
-			{
-				templates.Add(n.Attributes["title"].InnerText.Trim());
-			}
-
-			return templates.ToArray();
-		}
-
-		public string[] Categories
-		{
-			get
-			{
-				if (this.categories == null)
-				{
-					this.categories = this.GetAllCategories();
-				}
-				return this.categories;
-			}
-			set
-			{
-				this.categories = value;
-			}
-		}
-
-		List<string> currently_selected_categories;
-		public IEnumerable<string> CurrentlySelectedCategories
-		{
-			get
-			{
-				if (this.currently_selected_categories == null)
-				{
-					this.currently_selected_categories = new List<string>();			
-
-					foreach (TreeNode n in this.treeView_categories.Nodes)
-					{
-						if (n.Checked)
-						{
-							currently_selected_categories.Add(n.Text);
-						}
-					}
-				}
-				return this.currently_selected_categories;
-			}
-			set
-			{
-				List<string> cats = (this.currently_selected_categories == null)
-					? new List<string>(value)
-					: value.Union(this.currently_selected_categories).ToList();
-				this.currently_selected_categories = null;
-				
-				foreach (TreeNode n in this.treeView_categories.Nodes)
-				{
-					n.Checked = cats.Contains(n.Text);
-				}
-			}
+			ChangeListLevelHelper("*", 1);
 		}
 
 		private void OnCheckBoxCompactCheckedChanged(object sender, EventArgs e)
 		{
-			this.UpdateCSVInput(this.CopyRows(this.Rows).GetEnumerator());
-		}
-
-		IEnumerable<string[]> CopyRows(List<string[]> rows_)
-		{
-			// deep copy 'Rows'
-			foreach (string[] row in rows)
-			{
-				List<string> row_copy = new List<string>();
-				foreach (string s in row)
-				{
-					row_copy.Add(string.Copy(s));
-				}
-				yield return row_copy.ToArray();
-			}
-		}
-
-		List<string[]> CompactRows(List<string[]> rows, int groupby_column)
-		{
-			if (rows.Count == 0)
-			{
-				return rows;
-			}
-			
-			int n_row_fields = rows[0].Length;
-
-			if (groupby_column >= n_row_fields)
-			{
-				throw new IndexOutOfRangeException(
-					"groupby_column >= n_row_fields");
-			}
-
-			List<string[]> compacted = new List<string[]>();
-
-			IEnumerable<IGrouping<string, string[]>> groupings = 
-				rows.GroupBy(arr => arr[groupby_column]);
-
-			List<HashSet<string>> row = null;
-			foreach(IGrouping<string, string[]> grouping in groupings)
-			{
-				row = new List<HashSet<string>>();
-				
-				// generate lists for compacting values
-				for(int i = 0; i < n_row_fields; ++i)
-				{
-					row.Add(new HashSet<string>());
-				}
-
-				// there's only one value in this list
-				row[groupby_column].Add(grouping.Key);
-					
-				foreach(string[] r in grouping)
-				{
-					int j = 0;
-					foreach(string v in r)
-					{
-						if (j != groupby_column)
-						{
-							row[j].Add(v);
-						}
-						++j;
-					}
-				}
-
-				compacted.Add(row.Select(
-					o => string.Join(", ", o.ToArray())).ToArray());
-			}
-
-			return compacted;
-		}
-
-		IEnumerable<int> SelectedCSVColumns
-		{
-			get
-			{
-				int i = 0;
-				foreach (TreeNode n in this.treeView_columns.Nodes)
-				{
-					if (n.Checked)
-					{
-						yield return i;
-					}
-					++i;
-				}
-			}
+            this.Controller.CompactCSVRows = (sender as CheckBox).Checked;
 		}
 
 		private void OnToolStripMenuItemHelpClick(object sender, EventArgs e)
 		{
-			DisplayHelp();
+            this.Controller.DisplayHelp();
 		}
 
 		private void OnToolStripMenuItemPagetextCutClick(object sender, EventArgs e)
@@ -1032,21 +588,13 @@ namespace Docusnap2Wiki
 
 		private void OnButtonShowDataClick(object sender, EventArgs e)
 		{
-			new DataView(this.CSVColumnNames, this.Rows).ShowDialog();
+            if (this.Controller.CSVRows.Any())
+            {
+                new DataView(this.Controller.AllCSVColumns, this.Controller.CSVRows).ShowDialog();
+            }
 		}
 
-		public string[] CSVColumnNames
-		{
-			get
-			{
-				List<string> colnames = new List<string>();
-				foreach (TreeNode n in this.treeView_columns.Nodes)
-				{
-					colnames.Add(n.Text);
-				}
-				return colnames.ToArray();
-			}
-		}
+        IController Controller { get; set; }
 	}
 
 
